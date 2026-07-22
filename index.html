@@ -291,6 +291,44 @@
   .scoreboard-table td:first-child, .scoreboard-table th:first-child { text-align: left; font-family: inherit; font-weight: 600; }
   .scoreboard-table td.total, .scoreboard-table th.total { font-weight: 700; color: var(--accent); border-left: 2px solid var(--line); }
 
+  .awards-table td:first-child { font-family: inherit; color: var(--ink); font-weight: 700; text-align: left; white-space: normal; }
+  .awards-table td:nth-child(2) { text-align: left; font-weight: 400; white-space: normal; }
+  .awards-table td:nth-child(2) a { color: var(--accent); font-weight: 600; }
+  .awards-table td:nth-child(2) a:active { opacity: 0.6; }
+
+  /* ---- Trend chart(月別推移) ---- */
+  .trend-chart-wrap { position: relative; }
+  .trend-chart { width: 100%; display: block; overflow: visible; }
+  .trend-baseline { stroke: var(--line); stroke-width: 1; }
+  .trend-dot { cursor: pointer; }
+  .trend-labels { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--ink-faint); margin-top: 4px; }
+  .trend-label-end { color: var(--ink-muted); }
+  .trend-label-end b { color: var(--accent); font-family: 'Oswald', sans-serif; font-weight: 700; }
+  .trend-tooltip {
+    position: absolute; top: -6px; transform: translate(-50%, -100%);
+    background: var(--surface-raised); border: 1px solid var(--line); border-radius: 6px;
+    padding: 4px 8px; font-size: 11px; font-weight: 700; white-space: nowrap;
+    box-shadow: var(--shadow); pointer-events: none; font-family: 'Oswald', sans-serif;
+  }
+
+  /* ---- Calendar(出場カレンダー) ---- */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow { text-align: center; font-size: 10px; color: var(--ink-faint); font-weight: 700; padding-bottom: 4px; }
+  .cal-cell { aspect-ratio: 1; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; position: relative; }
+  .cal-cell.has-game { cursor: pointer; font-weight: 700; }
+  .cal-cell.empty { visibility: hidden; }
+  .cal-cell .cal-daynum { font-family: 'Oswald', sans-serif; }
+  .cal-cell .cal-dot { width: 5px; height: 5px; border-radius: 50%; margin-top: 2px; }
+  .cal-cell.result-win { background: color-mix(in srgb, var(--win) 16%, transparent); color: var(--win); }
+  .cal-cell.result-lose { background: color-mix(in srgb, var(--lose) 16%, transparent); color: var(--lose); }
+  .cal-cell.result-draw { background: color-mix(in srgb, var(--draw) 16%, transparent); color: var(--draw); }
+  .cal-cell.result-multi { background: var(--surface-2); color: var(--ink); }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .cal-nav button { padding: 6px 12px; border-radius: 999px; background: var(--surface-2); font-weight: 700; font-size: 13px; }
+  .cal-nav button:disabled { opacity: 0.3; }
+  .cal-nav .cal-month-label { font-weight: 700; font-family: 'Oswald', sans-serif; font-size: 15px; }
+  .cal-cell.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+
   footer.app-footer {
     margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--line);
     font-size: 10.5px; color: var(--ink-faint); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
@@ -472,6 +510,97 @@ function trendArrow(diff, threshold) {
   return { cls: 'flat', label: '→ 平常' };
 }
 
+function byResult(logs, result) {
+  return logs.filter(l => gameById[l.game_id]?.result === result);
+}
+
+function fmtMonth(ym) {
+  const [y, m] = ym.split('-');
+  return `${y.slice(2)}/${Number(m)}月`;
+}
+
+function monthlyTrend(logs, aggregateFn, extraArg) {
+  const map = new Map();
+  for (const l of logs) {
+    const ym = gameById[l.game_id]?.date_sort?.slice(0, 7);
+    if (!ym) continue;
+    if (!map.has(ym)) map.set(ym, []);
+    map.get(ym).push(l);
+  }
+  return [...map.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([month, ls]) => ({ month, ...aggregateFn(ls, extraArg) }));
+}
+
+// シンプルな単一系列の折れ線グラフ(SVG)。ホバー/タップで値を表示する。
+// cidは呼び出し側が一意に発行し、attachTrendChartEventsに渡すchartsByIdのキーと一致させること
+function renderTrendChart(cid, data, valueKey, { color = 'var(--accent)', fmt = v => v.toFixed(3), height = 108 } = {}) {
+  if (data.length < 2) return `<div class="empty-state" style="padding:20px 0">月別推移を表示するにはデータが不足しています</div>`;
+  const width = 320;
+  const padX = 10, padY = 16;
+  const w = width - padX * 2, h = height - padY * 2;
+  const values = data.map(d => d[valueKey]);
+  const max = Math.max(...values), min = Math.min(...values, 0);
+  const range = (max - min) || 1;
+  const points = data.map((d, i) => ({
+    x: padX + (data.length === 1 ? w / 2 : (i / (data.length - 1)) * w),
+    y: padY + h - ((d[valueKey] - min) / range) * h,
+    month: d.month,
+    value: d[valueKey],
+  }));
+  const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const last = points[points.length - 1];
+  return `
+    <div class="trend-chart-wrap" data-chart="${cid}">
+      <svg viewBox="0 0 ${width} ${height}" class="trend-chart" preserveAspectRatio="none" style="height:${height}px">
+        <line x1="${padX}" y1="${(padY + h).toFixed(1)}" x2="${width - padX}" y2="${(padY + h).toFixed(1)}" class="trend-baseline" />
+        <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" />
+        ${points.map((p, i) => `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${i === points.length - 1 ? 5 : 4}" fill="${color}" stroke="var(--surface)" stroke-width="2" data-idx="${i}" class="trend-dot" />`).join('')}
+      </svg>
+      <div class="trend-labels"><span>${esc(fmtMonth(points[0].month))}</span><span class="trend-label-end">${esc(fmtMonth(last.month))} <b>${esc(fmt(last.value))}</b></span></div>
+      <div class="trend-tooltip" hidden></div>
+    </div>
+  `;
+}
+
+function attachTrendChartEvents(main, chartsById) {
+  main.querySelectorAll('.trend-chart-wrap').forEach(wrap => {
+    const cid = wrap.dataset.chart;
+    const entry = chartsById[cid];
+    if (!entry) return;
+    const { data, valueKey, fmt } = entry;
+    const tooltip = wrap.querySelector('.trend-tooltip');
+    wrap.querySelectorAll('.trend-dot').forEach(dot => {
+      const idx = Number(dot.dataset.idx);
+      const show = () => {
+        const d = data[idx];
+        tooltip.textContent = `${fmtMonth(d.month)}: ${fmt(d[valueKey])}`;
+        tooltip.hidden = false;
+        const cx = Number(dot.getAttribute('cx'));
+        tooltip.style.left = `${(cx / 320) * 100}%`;
+      };
+      dot.addEventListener('pointerenter', show);
+      dot.addEventListener('pointerdown', show);
+      dot.addEventListener('pointerleave', () => { tooltip.hidden = true; });
+    });
+  });
+}
+
+// プロフィール文の末尾に含まれる「賞名(年,年)」形式の受賞歴をパースする
+function parseAwards(pr) {
+  if (!pr || pr === '-') return [];
+  const awards = [];
+  const re = /([^\s、,()]{2,})\(([\d,]+)\)/g;
+  let m;
+  while ((m = re.exec(pr))) {
+    const title = m[1];
+    for (const y of m[2].split(',')) {
+      if (/^\d{2}$/.test(y)) awards.push({ title, year: '20' + y });
+    }
+  }
+  return awards;
+}
+
 function resultClass(result) {
   if (result === '勝ち') return 'win';
   if (result === '負け') return 'lose';
@@ -479,7 +608,7 @@ function resultClass(result) {
 }
 
 // ---------- routing (Artifact iframe対策: hrefのデフォルト遷移に頼らずJSで完全制御) ----------
-const ROUTE_TITLES = { dashboard: 'ダッシュボード', ranking: 'ランキング', players: '選手・メンバー', games: '試合結果' };
+const ROUTE_TITLES = { dashboard: 'ダッシュボード', ranking: 'ランキング', players: '選手・メンバー', games: '試合結果', awards: '表彰・タイトル' };
 
 function parseHash() {
   return (location.hash.replace(/^#\/?/, '') || 'dashboard').split('/').filter(Boolean);
@@ -495,6 +624,7 @@ function router() {
   if (parts[0] === 'players') return renderPlayers(main);
   if (parts[0] === 'games' && parts[1]) return renderGameDetail(main, parts[1]);
   if (parts[0] === 'games') return renderGames(main);
+  if (parts[0] === 'awards') return renderAwards(main);
   return renderDashboard(main);
 }
 
@@ -616,6 +746,44 @@ function gameRowHtml(g) {
     </a>`;
 }
 
+// ---------- Awards(表彰・タイトル一覧) ----------
+function renderAwards(main) {
+  const allAwards = [];
+  for (const p of players) {
+    for (const a of parseAwards(p.pr)) allAwards.push({ ...a, name: p.name, number: p.number });
+  }
+  const years = [...new Set(allAwards.map(a => a.year))].sort().reverse();
+  const byYear = new Map(years.map(y => [y, new Map()]));
+  for (const a of allAwards) {
+    const titleMap = byYear.get(a.year);
+    if (!titleMap.has(a.title)) titleMap.set(a.title, []);
+    titleMap.get(a.title).push(a);
+  }
+
+  main.innerHTML = `
+    <a class="back-link" ${linkAttr('/players')}>← 選手一覧へ</a>
+    <p class="page-sub">選手プロフィールに記載された受賞歴一覧(${allAwards.length}件)</p>
+    ${years.map(year => `
+      <section>
+        <h2 class="section-title">${esc(year)}年</h2>
+        <div class="card table-wrap">
+          <table class="awards-table">
+            <thead><tr><th>タイトル</th><th>受賞者</th></tr></thead>
+            <tbody>
+              ${[...byYear.get(year).entries()].map(([title, winners]) => `
+                <tr>
+                  <td>${esc(title)}</td>
+                  <td>${winners.map(w => `<a class="clickable" ${linkAttr('/players/' + encodeURIComponent(w.name))}>${esc(w.name)}</a>`).join('、 ')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    `).join('') || `<div class="empty-state">受賞歴データがありません</div>`}
+  `;
+}
+
 // ---------- Ranking ----------
 let rankingState = { year: LATEST_YEAR, kind: 'batting', metric: 'avg' };
 const BATTING_METRICS = [
@@ -705,6 +873,7 @@ function renderPlayers(main) {
 
   main.innerHTML = `
     <p class="page-sub">全${players.length}名(選手・コーチ・マネージャー含む)</p>
+    <div style="margin-bottom:14px;"><a class="back-link" style="margin-bottom:0" ${linkAttr('/awards')}>🏆 表彰・タイトル一覧を見る →</a></div>
 
     <div class="filter-bar">
       <input type="search" id="q" placeholder="名前で検索" value="${esc(playerFilter.q)}" />
@@ -768,6 +937,20 @@ function renderPlayerDetail(main, name) {
 
   const oppRows = battingByOpponent(allBattingLogs).filter(r => r.ab >= 2).sort((a, b) => b.ab - a.ab);
 
+  const leagueFipConstant = computeFipConstant(pitching_logs.filter(l => l.is_roster_member));
+  const battingTrendData = monthlyTrend(allBattingLogs, aggregateBatting).filter(d => d.ab >= 1);
+  const pitchingTrendData = monthlyTrend(allPitchingLogs, ls => aggregatePitching(ls, leagueFipConstant)).filter(d => d.innings > 0);
+  const winBat = aggregateBatting(byResult(allBattingLogs, '勝ち'));
+  const loseBat = aggregateBatting(byResult(allBattingLogs, '負け'));
+  const winPit = aggregatePitching(byResult(allPitchingLogs, '勝ち'), leagueFipConstant);
+  const losePit = aggregatePitching(byResult(allPitchingLogs, '負け'), leagueFipConstant);
+
+  const chartsById = {};
+  const batTrendCid = 'batTrend-' + name;
+  chartsById[batTrendCid] = { data: battingTrendData, valueKey: 'avg', fmt: fmtAvg };
+  const pitTrendCid = 'pitTrend-' + name;
+  chartsById[pitTrendCid] = { data: pitchingTrendData, valueKey: 'era', fmt: fmtEra };
+
   main.innerHTML = `
     <a class="back-link" ${linkAttr('/players')}>← 選手一覧へ</a>
     <div class="player-header">
@@ -819,6 +1002,20 @@ function renderPlayerDetail(main, name) {
         </div>
         <div class="form-trend ${recentBatTrend.cls}">${recentBatTrend.label}</div>
       </div>` : ''}
+      <div class="card" style="margin-top:8px; padding:14px 16px">
+        <div class="stat-label" style="margin-bottom:8px">月別打率の推移</div>
+        ${renderTrendChart(batTrendCid, battingTrendData, 'avg', { fmt: fmtAvg })}
+      </div>
+      ${(winBat.ab > 0 || loseBat.ab > 0) ? `
+      <div class="card table-wrap" style="margin-top:8px">
+        <table>
+          <thead><tr><th>勝敗別</th><th class="num-h">試合</th><th class="num-h">打数</th><th class="num-h">打率</th><th class="num-h">OPS</th></tr></thead>
+          <tbody>
+            <tr><td>勝ち試合</td><td class="num">${winBat.g}</td><td class="num">${winBat.ab}</td><td class="num highlight">${fmtAvg(winBat.avg)}</td><td class="num">${fmtAvg(winBat.ops)}</td></tr>
+            <tr><td>負け試合</td><td class="num">${loseBat.g}</td><td class="num">${loseBat.ab}</td><td class="num highlight">${fmtAvg(loseBat.avg)}</td><td class="num">${fmtAvg(loseBat.ops)}</td></tr>
+          </tbody>
+        </table>
+      </div>` : ''}
     </section>` : ''}
 
     ${oppRows.length ? `
@@ -858,6 +1055,20 @@ function renderPlayerDetail(main, name) {
         </div>
         <div class="form-trend ${recentPitTrend.cls}">${recentPitTrend.label}</div>
       </div>` : ''}
+      <div class="card" style="margin-top:8px; padding:14px 16px">
+        <div class="stat-label" style="margin-bottom:8px">月別防御率の推移</div>
+        ${renderTrendChart(pitTrendCid, pitchingTrendData, 'era', { fmt: fmtEra })}
+      </div>
+      ${(winPit.innings > 0 || losePit.innings > 0) ? `
+      <div class="card table-wrap" style="margin-top:8px">
+        <table>
+          <thead><tr><th>チーム勝敗別</th><th class="num-h">登板</th><th class="num-h">投球回</th><th class="num-h">防御率</th></tr></thead>
+          <tbody>
+            <tr><td>勝ち試合</td><td class="num">${winPit.g}</td><td class="num">${fmtInnings(winPit.innings)}</td><td class="num highlight">${fmtEra(winPit.era)}</td></tr>
+            <tr><td>負け試合</td><td class="num">${losePit.g}</td><td class="num">${fmtInnings(losePit.innings)}</td><td class="num highlight">${fmtEra(losePit.era)}</td></tr>
+          </tbody>
+        </table>
+      </div>` : ''}
     </section>` : ''}
 
     <section>
@@ -882,18 +1093,36 @@ function renderPlayerDetail(main, name) {
 
   main.querySelector('#year-select').addEventListener('change', e => { playerDetailYear = e.target.value; renderPlayerDetail(main, name); });
   main.querySelectorAll('tbody tr.clickable').forEach(tr => tr.addEventListener('click', () => goTo(`/games/${tr.dataset.gid}`)));
+  attachTrendChartEvents(main, chartsById);
 }
 
 // ---------- Games list ----------
 let gameFilter = { year: 'all', category: 'all', opponent: 'all', result: 'all' };
+let gameViewMode = 'list';
 function renderGames(main) {
+  main.innerHTML = `
+    <p class="page-sub">全${games.length}試合(2024年〜)</p>
+    <div class="chip-group" style="margin-bottom:14px;">
+      <button class="chip ${gameViewMode === 'list' ? 'active' : ''}" data-view="list">リスト</button>
+      <button class="chip ${gameViewMode === 'calendar' ? 'active' : ''}" data-view="calendar">カレンダー</button>
+    </div>
+    <div id="games-body"></div>
+  `;
+  main.querySelectorAll('.chip[data-view]').forEach(el => el.addEventListener('click', () => {
+    gameViewMode = el.dataset.view;
+    renderGames(main);
+  }));
+  const body = main.querySelector('#games-body');
+  if (gameViewMode === 'calendar') renderGamesCalendar(body);
+  else renderGamesList(body);
+}
+
+function renderGamesList(body) {
   let list = gamesForFilter({ year: gameFilter.year, category: gameFilter.category, opponent: gameFilter.opponent });
   if (gameFilter.result !== 'all') list = list.filter(g => g.result === gameFilter.result);
   list = [...list].sort((a, b) => b.date_sort.localeCompare(a.date_sort));
 
-  main.innerHTML = `
-    <p class="page-sub">全${games.length}試合(2024年〜)</p>
-
+  body.innerHTML = `
     <div class="filter-bar">
       <select id="year-select">
         <option value="all">全期間</option>
@@ -924,10 +1153,79 @@ function renderGames(main) {
     </div>
   `;
 
-  main.querySelector('#year-select').addEventListener('change', e => { gameFilter.year = e.target.value; renderGames(main); });
-  main.querySelector('#cat-select').addEventListener('change', e => { gameFilter.category = e.target.value; renderGames(main); });
-  main.querySelector('#result-select').addEventListener('change', e => { gameFilter.result = e.target.value; renderGames(main); });
-  main.querySelector('#opp-select').addEventListener('change', e => { gameFilter.opponent = e.target.value; renderGames(main); });
+  body.querySelector('#year-select').addEventListener('change', e => { gameFilter.year = e.target.value; renderGamesList(body); });
+  body.querySelector('#cat-select').addEventListener('change', e => { gameFilter.category = e.target.value; renderGamesList(body); });
+  body.querySelector('#result-select').addEventListener('change', e => { gameFilter.result = e.target.value; renderGamesList(body); });
+  body.querySelector('#opp-select').addEventListener('change', e => { gameFilter.opponent = e.target.value; renderGamesList(body); });
+}
+
+let calState = { year: null, month: null, selectedDay: null };
+function renderGamesCalendar(body) {
+  const allYm = games.map(g => g.date_sort?.slice(0, 7)).filter(Boolean).sort();
+  const minYm = allYm[0], maxYm = allYm[allYm.length - 1];
+  if (!calState.year) {
+    const [y, m] = maxYm.split('-');
+    calState.year = Number(y);
+    calState.month = Number(m);
+  }
+  const { year, month } = calState;
+  const ym = `${year}-${String(month).padStart(2, '0')}`;
+  const gamesInMonth = games.filter(g => g.date_sort?.startsWith(ym));
+  const byDay = new Map();
+  for (const g of gamesInMonth) {
+    const day = Number(g.date_sort.slice(8, 10));
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(g);
+  }
+  const firstDow = new Date(year, month - 1, 1).getDay();
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const dows = ['日', '月', '火', '水', '木', '金', '土'];
+
+  const cellsHtml = [];
+  for (let i = 0; i < firstDow; i++) cellsHtml.push(`<div class="cal-cell empty"></div>`);
+  for (let d = 1; d <= daysInMonth; d++) {
+    const gs = byDay.get(d) || [];
+    let cls = 'cal-cell';
+    if (gs.length === 1) cls += ' has-game result-' + resultClass(gs[0].result);
+    else if (gs.length > 1) cls += ' has-game result-multi';
+    if (calState.selectedDay === d) cls += ' selected';
+    cellsHtml.push(`<div class="${cls}" data-day="${d}"><span class="cal-daynum">${d}</span>${gs.length ? `<span class="cal-dot"></span>` : ''}</div>`);
+  }
+
+  const selectedGames = calState.selectedDay ? (byDay.get(calState.selectedDay) || []) : [];
+
+  body.innerHTML = `
+    <div class="card" style="padding:14px 16px;">
+      <div class="cal-nav">
+        <button id="cal-prev" ${ym === minYm ? 'disabled' : ''}>‹</button>
+        <span class="cal-month-label">${year}年${month}月</span>
+        <button id="cal-next" ${ym === maxYm ? 'disabled' : ''}>›</button>
+      </div>
+      <div class="cal-grid">
+        ${dows.map(d => `<div class="cal-dow">${d}</div>`).join('')}
+        ${cellsHtml.join('')}
+      </div>
+    </div>
+    ${selectedGames.length ? `<div class="card" style="margin-top:10px;">${selectedGames.map(g => gameRowHtml(g)).join('')}</div>` : ''}
+  `;
+
+  body.querySelector('#cal-prev')?.addEventListener('click', () => {
+    calState.month--; if (calState.month < 1) { calState.month = 12; calState.year--; }
+    calState.selectedDay = null;
+    renderGamesCalendar(body);
+  });
+  body.querySelector('#cal-next')?.addEventListener('click', () => {
+    calState.month++; if (calState.month > 12) { calState.month = 1; calState.year++; }
+    calState.selectedDay = null;
+    renderGamesCalendar(body);
+  });
+  body.querySelectorAll('.cal-cell.has-game').forEach(cell => {
+    cell.addEventListener('click', () => {
+      const day = Number(cell.dataset.day);
+      calState.selectedDay = calState.selectedDay === day ? null : day;
+      renderGamesCalendar(body);
+    });
+  });
 }
 
 // ---------- Game detail ----------
