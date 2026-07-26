@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Peccino スコア入力(画面イメージ)</title>
+<style>
+  :root {
+    --bg: #0E1512; --surface: #161F1A; --surface-2: #1E2A22; --surface-raised: #223026;
+    --ink: #EDF3EC; --ink-muted: #93A497; --ink-faint: #5E6E63;
+    --line: #263229; --accent: #5FCE8F; --accent-strong: #3FE07F; --accent-ink: #06170E;
+    --amber: #F0B429; --clay: #E08355; --sky: #6FB7E0; --lose: #E88178;
+    --radius: 14px; --radius-sm: 10px;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #F3F5EF; --surface: #FFFFFF; --surface-2: #EBEEE4; --surface-raised: #FFFFFF;
+      --ink: #16211A; --ink-muted: #5B6B5D; --ink-faint: #93A092;
+      --line: #DEE3D5; --accent: #1D6B45; --accent-strong: #155334; --accent-ink: #FFFFFF;
+      --amber: #B8791E; --clay: #B85A2E; --sky: #2E7DAB; --lose: #B34438;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] { color-scheme: dark;
+    --bg: #0E1512; --surface: #161F1A; --surface-2: #1E2A22; --surface-raised: #223026;
+    --ink: #EDF3EC; --ink-muted: #93A497; --ink-faint: #5E6E63; --line: #263229;
+    --accent: #5FCE8F; --accent-strong: #3FE07F; --accent-ink: #06170E;
+    --amber: #F0B429; --clay: #E08355; --sky: #6FB7E0; --lose: #E88178;
+  }
+  :root[data-theme="light"] { color-scheme: light;
+    --bg: #F3F5EF; --surface: #FFFFFF; --surface-2: #EBEEE4; --surface-raised: #FFFFFF;
+    --ink: #16211A; --ink-muted: #5B6B5D; --ink-faint: #93A092; --line: #DEE3D5;
+    --accent: #1D6B45; --accent-strong: #155334; --accent-ink: #FFFFFF;
+    --amber: #B8791E; --clay: #B85A2E; --sky: #2E7DAB; --lose: #B34438;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "游ゴシック体","Yu Gothic","Hiragino Sans",Meiryo,sans-serif;
+    -webkit-font-smoothing: antialiased; overscroll-behavior-y: none;
+  }
+  button { font: inherit; color: inherit; }
+  .shell { max-width: 460px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  header { position: sticky; top: 0; z-index: 5; padding: 12px 14px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  header .title { font-size: 14.5px; font-weight: 700; }
+  header .sub { font-size: 10.5px; color: var(--ink-faint); }
+  .tabs { display: flex; gap: 6px; background: var(--surface-2); border-radius: 999px; padding: 3px; margin: 12px 14px; }
+  .tabs button { flex: 1; border: none; background: none; color: var(--ink-muted); font-weight: 700; font-size: 12px; padding: 9px 0; border-radius: 999px; }
+  .tabs button.active { background: var(--accent); color: var(--accent-ink); }
+  main { flex: 1; padding: 0 14px 24px; min-width: 0; }
+  .note { font-size: 10.5px; color: var(--ink-faint); background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 12px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  h2.sec { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--ink-muted); text-transform: uppercase; margin: 16px 0 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .link-btn { color: var(--accent); font-size: 11px; font-weight: 700; background: none; border: none; text-transform: none; letter-spacing: 0; }
+
+  /* --- 画面1: 試合設定 --- */
+  .lineup-row { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+  .lineup-row:last-child { border-bottom: none; }
+  .order-badge { width: 24px; height: 24px; border-radius: 7px; background: var(--surface-2); color: var(--accent); font-weight: 700; font-family: 'Oswald', sans-serif; display: grid; place-items: center; font-size: 12px; flex-shrink: 0; }
+  .lineup-row .name { flex: 1; font-weight: 600; font-size: 13px; min-width: 0; }
+  .pos-select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-size: 11.5px; padding: 6px 6px; flex-shrink: 0; }
+  .primary-btn { display: block; width: 100%; background: var(--accent); color: var(--accent-ink); border: none; border-radius: 999px; font-weight: 700; font-size: 14px; padding: 13px; margin-top: 16px; }
+  .ghost-btn { display: block; width: 100%; background: none; color: var(--ink-muted); border: 1px solid var(--line); border-radius: 999px; font-weight: 700; font-size: 13px; padding: 10px; margin-top: 8px; }
+
+  /* --- ハーフイニング切替 + 状態バー --- */
+  .half-toggle { display: flex; gap: 6px; background: var(--surface-2); border-radius: 999px; padding: 3px; margin-bottom: 10px; }
+  .half-toggle button { flex: 1; min-width: 0; border: none; background: none; color: var(--ink-muted); font-weight: 700; font-size: 12px; padding: 9px 4px; border-radius: 999px; white-space: nowrap; }
+  .half-toggle button.active.off { background: var(--sky); color: #06170E; }
+  .half-toggle button.active.def { background: var(--clay); color: #2a1206; }
+  .state-bar { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; margin-bottom: 10px; }
+  .state-bar .inning-label { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 14px; }
+  .outs-dots { display: flex; gap: 5px; align-items: center; }
+  .outs-dots span { font-size: 10px; color: var(--ink-faint); margin-right: 2px; }
+  .out-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); }
+  .out-dot.filled { background: var(--lose); border-color: var(--lose); }
+
+  /* --- 自チーム攻撃: スコアシート --- */
+  .score-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius); border: 1px solid var(--line); }
+  table.sheet { border-collapse: collapse; width: 100%; font-size: 11px; table-layout: fixed; }
+  table.sheet th, table.sheet td { border: 1px solid var(--line); text-align: center; padding: 0; }
+  table.sheet thead th { background: var(--surface-2); color: var(--ink-muted); font-size: 9.5px; padding: 5px 0; font-family: 'Oswald', sans-serif; width: 34px; }
+  table.sheet th.batter-col, table.sheet td.batter-col { text-align: left; padding: 6px 6px; white-space: nowrap; background: var(--surface); position: sticky; left: 0; width: 92px; overflow: hidden; text-overflow: ellipsis; z-index: 1; }
+  table.sheet td.batter-col .ord { color: var(--ink-faint); font-family: 'Oswald', sans-serif; margin-right: 3px; font-size: 10px; }
+  table.sheet td.batter-col .pname { font-size: 11.5px; font-weight: 600; }
+  td.cell { height: 42px; cursor: pointer; }
+  td.cell:active { background: var(--surface-2); }
+  td.cell .code { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 11.5px; letter-spacing: -0.02em; }
+  td.cell.hit .code { color: var(--accent); }
+  td.cell .dot { width: 4px; height: 4px; border-radius: 50%; margin: 2px auto 0; }
+  td.cell.empty { color: var(--ink-faint); font-size: 13px; }
+  .legend-row { display: flex; gap: 8px; flex-wrap: wrap; font-size: 9.5px; color: var(--ink-faint); margin-top: 8px; }
+  .legend-row span { display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+  .legend-row .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .runs-mark { color: var(--amber); font-size: 9px; margin-left: 2px; }
+
+  /* --- 塁上状況(ダイヤモンド) --- */
+  .diamond { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: auto auto; gap: 8px; max-width: 240px; margin: 0 auto; }
+  .base { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; padding: 10px 4px; text-align: center; cursor: pointer; }
+  .base.occupied { background: color-mix(in srgb, var(--amber) 20%, var(--surface-2)); border-color: var(--amber); }
+  .base .base-label { font-size: 9.5px; color: var(--ink-faint); font-weight: 700; }
+  .base .runner-name { font-size: 12px; font-weight: 700; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .base.occupied .runner-name { color: var(--amber); }
+  .base-2 { grid-column: 2; grid-row: 1; }
+  .base-3 { grid-column: 1; grid-row: 2; }
+  .base-1 { grid-column: 3; grid-row: 2; }
+  .run-log-item { font-size: 11.5px; color: var(--ink-muted); padding: 8px 12px; border-bottom: 1px solid var(--line); }
+  .run-log-item:last-child { border-bottom: none; }
+  .run-log-item b { color: var(--accent); }
+  .run-log-empty { padding: 14px 12px; font-size: 11.5px; color: var(--ink-faint); text-align: center; }
+
+  /* --- スコアボード --- */
+  table.scoreboard-table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  table.scoreboard-table th, table.scoreboard-table td { border: 1px solid var(--line); text-align: center; padding: 6px 4px; font-family: 'Oswald', sans-serif; }
+  table.scoreboard-table th { background: var(--surface-2); color: var(--ink-muted); font-size: 10px; }
+  table.scoreboard-table td:first-child, table.scoreboard-table th:first-child { text-align: left; font-family: inherit; font-weight: 700; padding-left: 8px; white-space: nowrap; }
+  table.scoreboard-table td.total, table.scoreboard-table th.total { font-weight: 700; color: var(--accent); border-left: 2px solid var(--line); }
+
+  /* --- 相手チーム攻撃(=自チーム守備): プレー一覧 --- */
+  .play-log-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .play-log-item:last-child { border-bottom: none; }
+  .play-log-item .pnum { width: 22px; height: 22px; border-radius: 6px; background: var(--surface-2); color: var(--ink-faint); font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 11px; display: grid; place-items: center; flex-shrink: 0; }
+  .play-log-item .desc { flex: 1; font-size: 12.5px; font-weight: 600; }
+  .play-log-item .desc .sub { display: block; font-size: 10.5px; color: var(--ink-faint); font-weight: 400; margin-top: 1px; }
+  .play-log-item .out-mark { font-size: 10px; color: var(--lose); font-weight: 700; }
+  .add-play-btn { width: 100%; background: var(--surface-2); border: 1px dashed var(--line); border-radius: var(--radius-sm); color: var(--ink-muted); font-weight: 700; font-size: 13px; padding: 12px; margin-top: 8px; }
+
+  .sub-log { margin-top: 10px; }
+  .sub-log-item { font-size: 11px; color: var(--ink-muted); padding: 7px 10px; border-bottom: 1px solid var(--line); }
+  .sub-log-item:last-child { border-bottom: none; }
+  .sub-log-item b { color: var(--ink); }
+  .finish-bar { position: sticky; bottom: 0; padding: 10px 14px calc(10px + env(safe-area-inset-bottom)); background: color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter: blur(10px); border-top: 1px solid var(--line); display: flex; gap: 8px; }
+  .finish-bar button.finish { flex: 1; min-width: 0; background: var(--clay); color: #fff; border: none; border-radius: 999px; font-weight: 700; font-size: 13px; padding: 12px 4px; white-space: nowrap; }
+  .finish-bar button.sub-open { flex: 1; min-width: 0; background: var(--surface-2); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; font-weight: 700; font-size: 13px; padding: 12px 4px; white-space: nowrap; }
+
+  /* --- モーダル共通 --- */
+  .sheet-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: flex-end; z-index: 30; }
+  .sheet-modal.open { display: flex; }
+  .sheet-body { width: 100%; max-width: 460px; margin: 0 auto; background: var(--surface); border-radius: 18px 18px 0 0; padding: 16px 14px calc(16px + env(safe-area-inset-bottom)); max-height: 85vh; overflow-y: auto; }
+  .sheet-handle { width: 36px; height: 4px; background: var(--line); border-radius: 4px; margin: 0 auto 12px; }
+  .sheet-title { font-size: 13px; color: var(--ink-muted); margin-bottom: 2px; }
+  .sheet-title b { color: var(--ink); font-size: 15px; }
+  .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 8px; }
+  .btn-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .opt-btn { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-weight: 700; font-size: 12px; padding: 12px 4px; }
+  .opt-btn.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .opt-btn.out-type { background: color-mix(in srgb, var(--lose) 14%, var(--surface-2)); }
+  .step-label { font-size: 10px; color: var(--ink-faint); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 14px; }
+  .save-btn { margin-top: 16px; }
+  .field-label { font-size: 11.5px; color: var(--ink-muted); margin-top: 12px; margin-bottom: 4px; display: block; }
+  .field-select { width: 100%; background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-size: 13px; padding: 10px; }
+  .radio-row { display: flex; gap: 8px; margin-top: 6px; }
+  .radio-row .opt-btn { flex: 1; }
+</style>
+
+<div class="shell">
+  <header>
+    <div>
+      <div class="title">Peccino スコア入力</div>
+      <div class="sub">7/26(日) vs タイガース @大倉山</div>
+    </div>
+    <div class="sub">記録: 谷本</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="setup">①試合設定</button>
+    <button class="tab-btn" data-tab="sheet">②スコアシート</button>
+  </div>
+
+  <main>
+    <div class="note">画面イメージの確認用モックです(実際のデータには繋がっていません)</div>
+
+    <!-- 画面1 -->
+    <section id="tab-setup">
+      <h2 class="sec">打順・守備を設定(自チーム)</h2>
+      <div class="card">
+        <div class="lineup-row"><div class="order-badge">1</div><div class="name">谷本大知</div><select class="pos-select"><option>三塁</option></select></div>
+        <div class="lineup-row"><div class="order-badge">2</div><div class="name">福田龍之介</div><select class="pos-select"><option>遊撃</option></select></div>
+        <div class="lineup-row"><div class="order-badge">3</div><div class="name">鬼頭亮太郎</div><select class="pos-select"><option>捕手</option></select></div>
+        <div class="lineup-row"><div class="order-badge">4</div><div class="name">中村駿</div><select class="pos-select"><option>投手</option></select></div>
+        <div class="lineup-row"><div class="order-badge">5</div><div class="name">新宮直希</div><select class="pos-select"><option>一塁</option></select></div>
+        <div class="lineup-row"><div class="order-badge">+</div><div class="name" style="color:var(--ink-faint)">メンバーを追加...</div></div>
+      </div>
+      <div class="note" style="margin-top:10px">相手チームの選手個別の登録は不要です(相手の打席は「結果」と「自チームの誰が処理したか」だけ記録します)。投手記録(投球回・自責点等)は、ここで設定した「誰がいつ投手だったか」+ 打席結果から自動計算します。</div>
+      <button class="primary-btn" onclick="switchTab('sheet')">試合を開始する →</button>
+    </section>
+
+    <!-- 画面2 -->
+    <section id="tab-sheet" style="display:none">
+      <div class="half-toggle">
+        <button class="half-btn active off" data-half="off">🏏 自チーム攻撃</button>
+        <button class="half-btn def" data-half="def">🧤 自チーム守備</button>
+      </div>
+      <div class="card state-bar">
+        <div class="inning-label" id="inning-label">3回 表</div>
+        <div class="outs-dots"><span>アウト</span><div class="out-dot"></div><div class="out-dot"></div><div class="out-dot"></div></div>
+      </div>
+
+      <h2 class="sec">スコアボード</h2>
+      <div class="score-wrap" style="margin-bottom:14px" id="scoreboard-wrap"></div>
+
+      <!-- 自チーム攻撃ビュー -->
+      <div id="view-off">
+        <h2 class="sec">塁上状況<span style="font-weight:400; text-transform:none; letter-spacing:0; font-size:10.5px">タップで進塁・盗塁・生還</span></h2>
+        <div class="card" style="padding:14px">
+          <div class="diamond">
+            <div class="base base-2" data-base="2"><div class="base-label">2塁</div><div class="runner-name">-</div></div>
+            <div class="base base-3" data-base="3"><div class="base-label">3塁</div><div class="runner-name">-</div></div>
+            <div class="base base-1" data-base="1"><div class="base-label">1塁</div><div class="runner-name">-</div></div>
+          </div>
+        </div>
+
+        <h2 class="sec">得点ログ</h2>
+        <div class="card" id="run-log" style="margin-bottom:14px"></div>
+
+        <h2 class="sec">打席結果(タップで入力)<button class="link-btn" onclick="openSubModal()">交代 →</button></h2>
+        <div class="score-wrap" id="score-wrap">
+          <table class="sheet">
+            <thead><tr><th class="batter-col">打者</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr></thead>
+            <tbody id="sheet-body"></tbody>
+          </table>
+        </div>
+        <div class="legend-row">
+          <span><span class="dot" style="background:var(--clay)"></span>ゴロ</span>
+          <span><span class="dot" style="background:var(--sky)"></span>フライ</span>
+          <span><span class="dot" style="background:var(--amber)"></span>ライナー</span>
+          <span><span class="dot" style="background:var(--ink-faint)"></span>内野フライ</span>
+          <span style="color:var(--accent)">■安打系は緑字</span>
+        </div>
+      </div>
+
+      <!-- 自チーム守備ビュー(相手攻撃) -->
+      <div id="view-def" style="display:none">
+        <h2 class="sec">相手の打席(結果+自チームの守備処理)</h2>
+        <div class="card">
+          <div id="play-log"></div>
+        </div>
+        <button class="add-play-btn" onclick="openDefModal()">+ 次の打席を記録</button>
+      </div>
+
+      <div class="sub-log">
+        <h2 class="sec" style="margin-bottom:6px">交代ログ</h2>
+        <div class="card">
+          <div class="sub-log-item">4回裏〜 <b>中村駿</b>(投手) → <b>藤原湧</b> に交代</div>
+          <div class="sub-log-item" style="color:var(--ink-faint)">まだ他の交代はありません</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="finish-bar" id="finish-bar" style="display:none">
+    <button class="sub-open" onclick="openSubModal()">🔄 選手交代</button>
+    <button class="finish" onclick="alert('(モック)ここを押すとFirestoreに「試合終了」が記録され、しばらくしてサイトに自動反映されます')">試合終了</button>
+  </div>
+</div>
+
+<!-- 自チーム打席結果入力モーダル -->
+<div class="sheet-modal" id="entry-modal">
+  <div class="sheet-body">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title"><b id="modal-batter">谷本大知</b> の打席(<span id="modal-inning">1</span>回)</div>
+
+    <div class="step-label">結果</div>
+    <div class="btn-grid" id="result-grid">
+      <button class="opt-btn" data-r="単打">単打</button>
+      <button class="opt-btn" data-r="二塁打">二塁打</button>
+      <button class="opt-btn" data-r="三塁打">三塁打</button>
+      <button class="opt-btn" data-r="本塁打">本塁打</button>
+      <button class="opt-btn" data-r="四球">四球</button>
+      <button class="opt-btn" data-r="死球">死球</button>
+      <button class="opt-btn out-type" data-r="三振">三振</button>
+      <button class="opt-btn out-type" data-r="アウト">アウト</button>
+      <button class="opt-btn" data-r="失策出塁">失策出塁</button>
+      <button class="opt-btn" data-r="犠打">犠打</button>
+      <button class="opt-btn" data-r="犠飛">犠飛</button>
+    </div>
+
+    <div id="ball-detail" style="display:none">
+      <div class="step-label">打球方向</div>
+      <div class="btn-grid" id="dir-grid">
+        <button class="opt-btn" data-d="引っ張り">引っ張り</button>
+        <button class="opt-btn" data-d="センター">センター</button>
+        <button class="opt-btn" data-d="流し">流し</button>
+      </div>
+      <div class="step-label">打球タイプ</div>
+      <div class="btn-grid cols-4" id="type-grid">
+        <button class="opt-btn" data-t="ゴロ">ゴロ</button>
+        <button class="opt-btn" data-t="フライ">フライ</button>
+        <button class="opt-btn" data-t="ライナー">ライナー</button>
+        <button class="opt-btn" data-t="内野フライ">内野<br>フライ</button>
+      </div>
+      <div class="note" style="margin-top:10px">相手の守備位置(誰が捕ったか)は記録しません(相手選手の成績はこのアプリの対象外)</div>
+    </div>
+
+    <div class="note" style="margin-top:10px">得点・盗塁は保存後、下の「塁上状況」からいつでも記録できます</div>
+
+    <button class="primary-btn save-btn" onclick="saveAtBat()">保存</button>
+    <button class="ghost-btn" onclick="closeModal()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 塁上操作モーダル -->
+<div class="sheet-modal" id="base-modal">
+  <div class="sheet-body">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="base-modal-title"><b>1塁</b>のランナー</div>
+    <div class="btn-grid" id="base-action-grid">
+      <button class="opt-btn" data-action="advance">進塁</button>
+      <button class="opt-btn" data-action="steal">盗塁成功</button>
+      <button class="opt-btn" data-action="score">生還(得点)</button>
+      <button class="opt-btn out-type" data-action="out">アウト(除外)</button>
+    </div>
+    <div id="rbi-picker" style="display:none">
+      <label class="field-label">打点をつける打者(この回に打った選手)</label>
+      <select class="field-select" id="rbi-select">
+        <option value="">なし(盗塁での生還など)</option>
+      </select>
+    </div>
+    <div id="place-runner-picker" style="display:none">
+      <label class="field-label">誰を塁に置きますか</label>
+      <select class="field-select" id="place-runner-select"></select>
+    </div>
+    <button class="primary-btn save-btn" onclick="confirmBaseAction()">決定</button>
+    <button class="ghost-btn" onclick="closeBaseModal()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 相手打席(自チーム守備)入力モーダル -->
+<div class="sheet-modal" id="def-modal">
+  <div class="sheet-body">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">相手の打席(<span id="def-inning">3</span>回裏、相手<span id="def-batnum">4</span>番)</div>
+
+    <div class="step-label">結果</div>
+    <div class="btn-grid" id="def-result-grid">
+      <button class="opt-btn" data-r="安打">安打</button>
+      <button class="opt-btn" data-r="四球">四球</button>
+      <button class="opt-btn" data-r="死球">死球</button>
+      <button class="opt-btn out-type" data-r="三振">三振</button>
+      <button class="opt-btn out-type" data-r="アウト">アウト</button>
+      <button class="opt-btn" data-r="失策">失策</button>
+    </div>
+
+    <div id="def-field-detail" style="display:none">
+      <div class="step-label">自チームの守備(誰が処理したか)</div>
+      <div class="btn-grid cols-4" id="def-pos-grid">
+        <button class="opt-btn" data-p="投">投</button>
+        <button class="opt-btn" data-p="捕">捕</button>
+        <button class="opt-btn" data-p="一">一</button>
+        <button class="opt-btn" data-p="二">二</button>
+        <button class="opt-btn" data-p="三">三</button>
+        <button class="opt-btn" data-p="遊">遊</button>
+        <button class="opt-btn" data-p="左">左</button>
+        <button class="opt-btn" data-p="中">中</button>
+        <button class="opt-btn" data-p="右">右</button>
+      </div>
+    </div>
+
+    <div id="def-runs-detail" style="display:none">
+      <div class="step-label">この打席での失点</div>
+      <div class="btn-grid cols-4" id="def-runs-grid">
+        <button class="opt-btn sel" data-run="0">0点</button>
+        <button class="opt-btn" data-run="1">1点</button>
+        <button class="opt-btn" data-run="2">2点</button>
+        <button class="opt-btn" data-run="3">3点</button>
+      </div>
+    </div>
+
+    <button class="primary-btn save-btn" onclick="saveDefPlay()">保存</button>
+    <button class="ghost-btn" onclick="closeDefModal()">キャンセル</button>
+  </div>
+</div>
+
+<!-- 交代モーダル -->
+<div class="sheet-modal" id="sub-modal">
+  <div class="sheet-body">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title"><b>選手交代</b></div>
+
+    <div class="step-label" style="margin-top:8px">交代の種類</div>
+    <div class="radio-row">
+      <button class="opt-btn sel" data-subtype="bat">打者交代(代打・代走)</button>
+      <button class="opt-btn" data-subtype="def">守備交代(ポジション変更)</button>
+    </div>
+
+    <label class="field-label">対象の打順</label>
+    <select class="field-select">
+      <option>1番 谷本大知</option><option>2番 福田龍之介</option><option>3番 鬼頭亮太郎</option>
+      <option selected>4番 中村駿</option><option>5番 新宮直希</option>
+    </select>
+
+    <label class="field-label">交代後の選手</label>
+    <select class="field-select">
+      <option selected>藤原湧</option><option>大川滉平</option><option>末光弘明</option>
+    </select>
+
+    <label class="field-label">何回から</label>
+    <select class="field-select"><option>4回裏〜</option><option>5回表〜</option></select>
+
+    <button class="primary-btn save-btn" onclick="closeSubModal()">交代を記録</button>
+    <button class="ghost-btn" onclick="closeSubModal()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+const BATTERS = ['谷本大知','福田龍之介','鬼頭亮太郎','中村駿','新宮直希'];
+const NEEDS_BALL_DETAIL = new Set(['単打','二塁打','三塁打','本塁打','アウト','失策出塁','犠打','犠飛']);
+const OUT_RESULTS_OFF = new Set(['三振','アウト','犠打','犠飛']);
+const TYPE_COLOR = { 'ゴロ':'var(--clay)', 'フライ':'var(--sky)', 'ライナー':'var(--amber)', '内野フライ':'var(--ink-faint)' };
+const IS_HIT = new Set(['単打','二塁打','三塁打','本塁打']);
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// --- 塁上状況・得点ログ(自チーム攻撃のみ。得点/盗塁は打席入力と切り離し、いつでも記録できるようにする) ---
+const runners = { 1: null, 2: '福田龍之介', 3: null };
+const runLog = [];
+
+function renderBases() {
+  [1, 2, 3].forEach(b => {
+    const el = document.querySelector(`.base-${b}`);
+    const name = runners[b];
+    el.classList.toggle('occupied', !!name);
+    el.querySelector('.runner-name').textContent = name || '-';
+  });
+}
+function renderRunLog() {
+  const wrap = document.getElementById('run-log');
+  wrap.innerHTML = runLog.length === 0
+    ? '<div class="run-log-empty">まだ得点はありません</div>'
+    : runLog.map(r => `<div class="run-log-item">${r.inning}回${r.half === 'off' ? '表' : '裏'} <b>${esc(r.scorer)}</b> が生還${r.rbi ? `(打点: ${esc(r.rbi)})` : ''}</div>`).join('');
+}
+function logRun(scorerName, rbiName) {
+  if (!scorerName) return;
+  runLog.unshift({ inning: game.inning, half: game.half, scorer: scorerName, rbi: rbiName });
+  addRuns('off', 1);
+}
+function autoAdvanceOnHit(batterName, bases) {
+  [3, 2, 1].forEach(b => {
+    if (runners[b] && (b + bases) > 3) { logRun(runners[b], batterName); runners[b] = null; }
+  });
+  const next = { 1: null, 2: null, 3: null };
+  [3, 2, 1].forEach(b => { if (runners[b]) next[b + bases] = runners[b]; });
+  runners[1] = next[1] || null; runners[2] = next[2] || null; runners[3] = next[3] || null;
+  if (bases <= 3) runners[bases] = batterName; else logRun(batterName, batterName);
+  renderBases(); renderRunLog();
+}
+function autoAdvanceOnWalk(batterName) {
+  if (!runners[1]) { runners[1] = batterName; }
+  else if (!runners[2]) { runners[2] = runners[1]; runners[1] = batterName; }
+  else if (!runners[3]) { runners[3] = runners[2]; runners[2] = runners[1]; runners[1] = batterName; }
+  else { logRun(runners[3], batterName); runners[3] = runners[2]; runners[2] = runners[1]; runners[1] = batterName; }
+  renderBases(); renderRunLog();
+}
+
+let baseModalTarget = null;
+let selectedBaseAction = null;
+function openBaseModal(baseNum) {
+  baseModalTarget = baseNum;
+  selectedBaseAction = null;
+  const name = runners[baseNum];
+  document.getElementById('base-modal-title').innerHTML = `<b>${baseNum}塁</b>のランナー: ${name ? esc(name) : '(空)'}`;
+  document.getElementById('rbi-picker').style.display = 'none';
+  document.getElementById('place-runner-picker').style.display = 'none';
+  const grid = document.getElementById('base-action-grid');
+  grid.innerHTML = name
+    ? `<button class="opt-btn" data-action="advance">進塁</button>
+       <button class="opt-btn" data-action="steal">盗塁成功</button>
+       <button class="opt-btn" data-action="score">生還(得点)</button>
+       <button class="opt-btn out-type" data-action="out">アウト(除外)</button>`
+    : `<button class="opt-btn" data-action="place" style="grid-column:1/-1">この塁にランナーを置く</button>`;
+  document.getElementById('base-modal').classList.add('open');
+}
+function closeBaseModal() { document.getElementById('base-modal').classList.remove('open'); }
+document.getElementById('base-action-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.opt-btn'); if (!btn) return;
+  document.querySelectorAll('#base-action-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  selectedBaseAction = btn.dataset.action;
+  document.getElementById('rbi-picker').style.display = selectedBaseAction === 'score' ? 'block' : 'none';
+  document.getElementById('place-runner-picker').style.display = selectedBaseAction === 'place' ? 'block' : 'none';
+  if (selectedBaseAction === 'place') {
+    document.getElementById('place-runner-select').innerHTML = BATTERS.map(n => `<option>${esc(n)}</option>`).join('');
+  }
+  if (selectedBaseAction === 'score') {
+    document.getElementById('rbi-select').innerHTML = '<option value="">なし(盗塁での生還など)</option>' + BATTERS.map(n => `<option>${esc(n)}</option>`).join('');
+  }
+});
+function confirmBaseAction() {
+  const b = baseModalTarget;
+  if (selectedBaseAction === 'place') {
+    runners[b] = document.getElementById('place-runner-select').value;
+  } else if (selectedBaseAction === 'advance' || selectedBaseAction === 'steal') {
+    if (b < 3) { runners[b + 1] = runners[b]; runners[b] = null; }
+    else { logRun(runners[3], null); runners[3] = null; }
+  } else if (selectedBaseAction === 'score') {
+    logRun(runners[b], document.getElementById('rbi-select').value || null);
+    runners[b] = null;
+  } else if (selectedBaseAction === 'out') {
+    runners[b] = null;
+  }
+  closeBaseModal();
+  renderBases();
+  renderRunLog();
+  updateStateBar();
+}
+document.querySelectorAll('.base').forEach(el => el.addEventListener('click', () => openBaseModal(Number(el.dataset.base))));
+
+// --- 試合全体の状態(回・表裏・アウトカウント・得点) ---
+// 「表/裏」は説明用の表示に過ぎず、実際にどちらが先攻かはここでは区別していません
+const game = { inning: 3, half: 'off', outs: 0, score: { off: { 1: 1, 2: 0 }, def: { 1: 0, 2: 1 } } };
+
+function updateStateBar() {
+  document.getElementById('inning-label').textContent = `${game.inning}回 ${game.half === 'off' ? '表' : '裏'}`;
+  document.querySelectorAll('.out-dot').forEach((d, i) => d.classList.toggle('filled', i < game.outs));
+  document.querySelectorAll('.half-btn').forEach(b => b.classList.toggle('active', b.dataset.half === game.half));
+  document.getElementById('view-off').style.display = game.half === 'off' ? 'block' : 'none';
+  document.getElementById('view-def').style.display = game.half === 'def' ? 'block' : 'none';
+  renderScoreboard();
+}
+
+function addRuns(side, runs) {
+  if (!runs) return;
+  game.score[side][game.inning] = (game.score[side][game.inning] || 0) + runs;
+}
+
+function registerOut() {
+  game.outs++;
+  if (game.outs >= 3) {
+    game.outs = 0;
+    if (game.half === 'off') { game.half = 'def'; }
+    else { game.half = 'off'; game.inning++; }
+  }
+  updateStateBar();
+}
+
+function renderScoreboard() {
+  const maxInning = Math.max(game.inning, 1, ...Object.keys(game.score.off).map(Number), ...Object.keys(game.score.def).map(Number));
+  const innings = Array.from({ length: maxInning }, (_, i) => i + 1);
+  const rowHtml = (label, sideScores) => {
+    const total = Object.values(sideScores).reduce((a, b) => a + b, 0);
+    const cells = innings.map(i => `<td>${sideScores[i] !== undefined ? sideScores[i] : '-'}</td>`).join('');
+    return `<tr><td>${label}</td>${cells}<td class="total">${total}</td></tr>`;
+  };
+  document.getElementById('scoreboard-wrap').innerHTML = `
+    <table class="scoreboard-table">
+      <thead><tr><th></th>${innings.map(i => `<th>${i}</th>`).join('')}<th class="total">計</th></tr></thead>
+      <tbody>
+        ${rowHtml('自チーム', game.score.off)}
+        ${rowHtml('相手', game.score.def)}
+      </tbody>
+    </table>`;
+}
+
+function buildCode(cell) {
+  if (!cell) return '';
+  const { result } = cell;
+  if (['四球','死球','三振'].includes(result)) return result;
+  const pos = cell.position || '';
+  if (result === '単打') return pos + '安';
+  if (result === '二塁打') return pos + '二塁打';
+  if (result === '三塁打') return pos + '三塁打';
+  if (result === '本塁打') return pos + '本塁打';
+  if (result === '失策出塁') return pos + '失';
+  if (result === '犠打') return pos + '犠打';
+  if (result === '犠飛') return pos + '犠飛';
+  if (result === 'アウト') {
+    const t = cell.type;
+    const typeChar = t === 'ゴロ' ? 'ゴロ' : (t === 'ライナー' ? '直' : '飛');
+    return pos + typeChar;
+  }
+  return result;
+}
+function runsMark(runs) { return runs ? `<span class="runs-mark">●${runs}</span>` : ''; }
+
+// --- 自チーム攻撃側の状態 ---
+const state = {};
+state['0-0'] = { result: '単打', dir: '引っ張り', type: 'ゴロ' };
+state['1-0'] = { result: 'アウト', dir: 'センター', type: 'フライ' };
+state['0-1'] = { result: '二塁打', dir: '流し', type: 'フライ' };
+state['2-1'] = { result: '三振' };
+
+function renderSheet() {
+  const body = document.getElementById('sheet-body');
+  body.innerHTML = BATTERS.map((name, r) => {
+    const cells = [0,1,2,3,4,5,6].map(c => {
+      const cell = state[`${r}-${c}`];
+      if (!cell) return `<td class="cell empty" data-r="${r}" data-c="${c}">・</td>`;
+      const hitClass = IS_HIT.has(cell.result) ? 'hit' : '';
+      const dotHtml = cell.type ? `<div class="dot" style="background:${TYPE_COLOR[cell.type]}"></div>` : '';
+      return `<td class="cell ${hitClass}" data-r="${r}" data-c="${c}"><div class="code">${buildCode(cell)}${runsMark(cell.runs)}</div>${dotHtml}</td>`;
+    }).join('');
+    return `<tr><td class="batter-col"><span class="ord">${r+1}</span><span class="pname">${name}</span></td>${cells}</tr>`;
+  }).join('');
+  body.querySelectorAll('.cell').forEach(td => td.addEventListener('click', () => openModal(+td.dataset.r, +td.dataset.c)));
+}
+
+let current = null;
+function openModal(r, c) {
+  current = { r, c };
+  document.getElementById('modal-batter').textContent = BATTERS[r];
+  document.getElementById('modal-inning').textContent = c + 1;
+  document.querySelectorAll('#result-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('#dir-grid .opt-btn, #type-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('ball-detail').style.display = 'none';
+  const existing = state[`${r}-${c}`];
+  if (existing) {
+    const rBtn = document.querySelector(`#result-grid [data-r="${existing.result}"]`); if (rBtn) rBtn.classList.add('sel');
+    if (existing.dir) { const b = document.querySelector(`#dir-grid [data-d="${existing.dir}"]`); if (b) b.classList.add('sel'); }
+    if (existing.type) { const b = document.querySelector(`#type-grid [data-t="${existing.type}"]`); if (b) b.classList.add('sel'); }
+    if (NEEDS_BALL_DETAIL.has(existing.result)) document.getElementById('ball-detail').style.display = 'block';
+  }
+  document.getElementById('entry-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('entry-modal').classList.remove('open'); }
+function saveAtBat() {
+  closeModal();
+  renderSheet();
+  const cell = current && state[`${current.r}-${current.c}`];
+  if (cell && !cell._counted) {
+    cell._counted = true; // モック内で二重カウントしないための目印(交代・修正機能は今回のモックでは未対応)
+    const batterName = BATTERS[current.r];
+    if (cell.result === '単打') autoAdvanceOnHit(batterName, 1);
+    else if (cell.result === '二塁打') autoAdvanceOnHit(batterName, 2);
+    else if (cell.result === '三塁打') autoAdvanceOnHit(batterName, 3);
+    else if (cell.result === '本塁打') autoAdvanceOnHit(batterName, 4);
+    else if (['四球', '死球', '失策出塁'].includes(cell.result)) autoAdvanceOnWalk(batterName);
+    if (OUT_RESULTS_OFF.has(cell.result)) registerOut();
+    else updateStateBar();
+  }
+}
+
+document.getElementById('result-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.opt-btn'); if (!btn) return;
+  document.querySelectorAll('#result-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  const r = btn.dataset.r;
+  document.getElementById('ball-detail').style.display = NEEDS_BALL_DETAIL.has(r) ? 'block' : 'none';
+  if (current) state[`${current.r}-${current.c}`] = { result: r, dir: null, type: null };
+});
+document.getElementById('dir-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.opt-btn'); if (!btn) return;
+  document.querySelectorAll('#dir-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  if (current) state[`${current.r}-${current.c}`].dir = btn.dataset.d;
+});
+document.getElementById('type-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.opt-btn'); if (!btn) return;
+  document.querySelectorAll('#type-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  if (current) state[`${current.r}-${current.c}`].type = btn.dataset.t;
+});
+
+// --- 自チーム守備側(相手攻撃)の状態 ---
+const DEF_OUT_RESULTS = new Set(['三振','アウト']);
+const DEF_NEEDS_POSITION = new Set(['安打','アウト','失策']);
+const DEF_NEEDS_RUNS = new Set(['安打','四球','死球','失策','アウト']);
+const defPlays = [
+  { batnum: 1, result: '安打', position: null, runs: 0 },
+  { batnum: 2, result: 'アウト', position: '遊', runs: 0 },
+  { batnum: 3, result: '三振', position: null, runs: 0 },
+];
+function renderPlayLog() {
+  const wrap = document.getElementById('play-log');
+  wrap.innerHTML = defPlays.map(p => {
+    const outMark = DEF_OUT_RESULTS.has(p.result) ? '<span class="out-mark">アウト</span>' : '';
+    const posText = p.position ? `<span class="sub">自チーム ${p.position} が処理</span>` : (p.result === '失策' ? '<span class="sub">自チームの失策</span>' : '');
+    return `<div class="play-log-item"><div class="pnum">${p.batnum}</div><div class="desc">${p.result}${runsMark(p.runs)}${posText}</div>${outMark}</div>`;
+  }).join('');
+}
+
+let defCurrentResult = null;
+let defCurrentPos = null;
+let defCurrentRuns = 0;
+function openDefModal() {
+  document.getElementById('def-batnum').textContent = (defPlays.length % 9) + 1;
+  document.querySelectorAll('#def-result-grid .opt-btn, #def-pos-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  document.querySelectorAll('#def-runs-grid .opt-btn').forEach(b => b.classList.toggle('sel', b.dataset.run === '0'));
+  document.getElementById('def-field-detail').style.display = 'none';
+  document.getElementById('def-runs-detail').style.display = 'none';
+  defCurrentResult = null;
+  defCurrentPos = null;
+  defCurrentRuns = 0;
+  document.getElementById('def-modal').classList.add('open');
+}
+function closeDefModal() { document.getElementById('def-modal').classList.remove('open'); }
+document.getElementById('def-result-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.opt-btn'); if (!btn) return;
+  document.querySelectorAll('#def-result-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  defCurrentResult = btn.dataset.r;
+  defCurrentPos = null;
+  document.querySelectorAll('#def-pos-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  document.getElementById('def-field-detail').style.display = DEF_NEEDS_POSITION.has(defCurrentResult) ? 'block' : 'none';
+  document.getElementById('def-runs-detail').style.display = DEF_NEEDS_RUNS.has(defCurrentResult) ? 'block' : 'none';
+});
+document.getElementById('def-pos-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.opt-btn'); if (!btn) return;
+  document.querySelectorAll('#def-pos-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  defCurrentPos = btn.dataset.p;
+});
+document.getElementById('def-runs-grid').addEventListener('click', e => {
+  const btn = e.target.closest('.opt-btn'); if (!btn) return;
+  document.querySelectorAll('#def-runs-grid .opt-btn').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  defCurrentRuns = Number(btn.dataset.run);
+});
+function saveDefPlay() {
+  if (!defCurrentResult) { closeDefModal(); return; }
+  defPlays.push({ batnum: (defPlays.length % 9) + 1, result: defCurrentResult, position: defCurrentPos, runs: defCurrentRuns });
+  closeDefModal();
+  renderPlayLog();
+  addRuns('def', defCurrentRuns);
+  if (DEF_OUT_RESULTS.has(defCurrentResult)) registerOut();
+  else updateStateBar();
+}
+
+function setHalf(half) {
+  game.half = half;
+  updateStateBar();
+}
+document.querySelectorAll('.half-btn').forEach(b => b.addEventListener('click', () => setHalf(b.dataset.half)));
+
+function openSubModal() { document.getElementById('sub-modal').classList.add('open'); }
+function closeSubModal() { document.getElementById('sub-modal').classList.remove('open'); }
+document.querySelectorAll('[data-subtype]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-subtype]').forEach(x => x.classList.remove('sel'));
+  b.classList.add('sel');
+}));
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.getElementById('tab-setup').style.display = name === 'setup' ? 'block' : 'none';
+  document.getElementById('tab-sheet').style.display = name === 'sheet' ? 'block' : 'none';
+  document.getElementById('finish-bar').style.display = name === 'sheet' ? 'flex' : 'none';
+}
+document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+renderSheet();
+renderPlayLog();
+renderBases();
+renderRunLog();
+updateStateBar();
+</script>
+
+</body>
+</html>
