@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Peccino スコア入力 3パターン比較</title>
+<style>
+  :root {
+    --bg: #0E1512; --surface: #161F1A; --surface-2: #1E2A22; --surface-raised: #223026;
+    --ink: #EDF3EC; --ink-muted: #93A497; --ink-faint: #5E6E63;
+    --line: #263229; --accent: #5FCE8F; --accent-strong: #3FE07F; --accent-ink: #06170E;
+    --amber: #F0B429; --clay: #E08355; --sky: #6FB7E0; --lose: #E88178;
+    --radius: 14px; --radius-sm: 10px;
+    color-scheme: dark;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #F3F5EF; --surface: #FFFFFF; --surface-2: #EBEEE4; --surface-raised: #FFFFFF;
+      --ink: #16211A; --ink-muted: #5B6B5D; --ink-faint: #93A092;
+      --line: #DEE3D5; --accent: #1D6B45; --accent-strong: #155334; --accent-ink: #FFFFFF;
+      --amber: #B8791E; --clay: #B85A2E; --sky: #2E7DAB; --lose: #B34438;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] { color-scheme: dark;
+    --bg: #0E1512; --surface: #161F1A; --surface-2: #1E2A22; --surface-raised: #223026;
+    --ink: #EDF3EC; --ink-muted: #93A497; --ink-faint: #5E6E63; --line: #263229;
+    --accent: #5FCE8F; --accent-strong: #3FE07F; --accent-ink: #06170E;
+    --amber: #F0B429; --clay: #E08355; --sky: #6FB7E0; --lose: #E88178;
+  }
+  :root[data-theme="light"] { color-scheme: light;
+    --bg: #F3F5EF; --surface: #FFFFFF; --surface-2: #EBEEE4; --surface-raised: #FFFFFF;
+    --ink: #16211A; --ink-muted: #5B6B5D; --ink-faint: #93A092; --line: #DEE3D5;
+    --accent: #1D6B45; --accent-strong: #155334; --accent-ink: #FFFFFF;
+    --amber: #B8791E; --clay: #B85A2E; --sky: #2E7DAB; --lose: #B34438;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "游ゴシック体","Yu Gothic","Hiragino Sans",Meiryo,sans-serif;
+    -webkit-font-smoothing: antialiased; overscroll-behavior-y: none;
+  }
+  button { font: inherit; color: inherit; }
+  .shell { max-width: 460px; margin: 0 auto; min-height: 100vh; display: flex; flex-direction: column; }
+  header { position: sticky; top: 0; z-index: 5; padding: 12px 14px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header .title { font-size: 14.5px; font-weight: 700; }
+  header .sub { font-size: 10.5px; color: var(--ink-faint); margin-top: 2px; }
+  .pattern-tabs { display: flex; gap: 6px; background: var(--surface-2); border-radius: 999px; padding: 3px; margin: 12px 14px 0; }
+  .pattern-tabs button { flex: 1; min-width: 0; border: none; background: none; color: var(--ink-muted); font-weight: 700; font-size: 12.5px; padding: 10px 2px; border-radius: 999px; white-space: nowrap; }
+  .pattern-tabs button.active { background: var(--accent); color: var(--accent-ink); }
+  .pattern-desc { margin: 10px 14px 0; font-size: 11px; color: var(--ink-faint); background: var(--surface); border: 1px dashed var(--line); border-radius: var(--radius-sm); padding: 9px 11px; }
+  main { flex: 1; padding: 14px 14px 24px; min-width: 0; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+  h2.sec { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; color: var(--ink-muted); text-transform: uppercase; margin: 16px 0 8px; }
+
+  /* --- 選手行(共通) --- */
+  .player-row { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .player-row:last-child { border-bottom: none; }
+  .player-row .top { display: flex; align-items: center; gap: 8px; }
+  .player-row .name { font-weight: 700; font-size: 13.5px; flex: 1; min-width: 0; }
+  .add-btn { background: var(--surface-2); border: 1px solid var(--line); color: var(--accent); font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 999px; flex-shrink: 0; }
+  .log-line { font-size: 12.5px; color: var(--ink-muted); margin-top: 6px; min-height: 18px; word-break: break-all; }
+  .log-line .code { color: var(--ink); font-weight: 600; }
+  .log-line .code.hit { color: var(--accent); }
+  .tally-row { display: flex; gap: 14px; margin-top: 8px; flex-wrap: wrap; }
+  .tally { display: flex; align-items: center; gap: 6px; background: var(--surface-2); border-radius: 999px; padding: 4px 4px 4px 10px; }
+  .tally .tlabel { font-size: 10.5px; color: var(--ink-faint); font-weight: 700; }
+  .tally .tval { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 13px; min-width: 14px; text-align: center; }
+  .tally button { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-raised); border: 1px solid var(--line); font-weight: 700; font-size: 13px; line-height: 1; }
+  .tally button.plus { color: var(--accent); }
+  .tally button.minus { color: var(--ink-faint); }
+
+  /* --- モーダル共通 --- */
+  .sheet-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none; align-items: flex-end; z-index: 30; }
+  .sheet-modal.open { display: flex; }
+  .sheet-body { width: 100%; max-width: 460px; margin: 0 auto; background: var(--surface); border-radius: 18px 18px 0 0; padding: 16px 14px calc(16px + env(safe-area-inset-bottom)); max-height: 85vh; overflow-y: auto; }
+  .sheet-handle { width: 36px; height: 4px; background: var(--line); border-radius: 4px; margin: 0 auto 12px; }
+  .sheet-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .step-label { font-size: 10px; color: var(--ink-faint); letter-spacing: 0.04em; text-transform: uppercase; margin-top: 14px; }
+  .btn-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; margin-top: 8px; }
+  .btn-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .btn-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+  .opt-btn { background: var(--surface-2); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-weight: 700; font-size: 12.5px; padding: 13px 4px; }
+  .opt-btn.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .opt-btn.out-type { background: color-mix(in srgb, var(--lose) 14%, var(--surface-2)); }
+  .opt-btn .num { display: block; font-family: 'Oswald', sans-serif; font-size: 16px; }
+  .primary-btn { display: block; width: 100%; background: var(--accent); color: var(--accent-ink); border: none; border-radius: 999px; font-weight: 700; font-size: 14px; padding: 13px; margin-top: 18px; }
+  .ghost-btn { display: block; width: 100%; background: none; color: var(--ink-muted); border: 1px solid var(--line); border-radius: 999px; font-weight: 700; font-size: 13px; padding: 10px; margin-top: 8px; }
+  .undo-btn { background: none; border: none; color: var(--ink-faint); font-size: 10.5px; text-decoration: underline; flex-shrink: 0; }
+</style>
+
+<div class="shell">
+  <header>
+    <div class="title">Peccino スコア入力(比較用モック)</div>
+    <div class="sub">記録員さんに触ってもらって、一番良いものを選んでください</div>
+    <div class="pattern-tabs">
+      <button class="ptab active" data-p="A">A: 最小限</button>
+      <button class="ptab" data-p="B">B: 分析維持</button>
+      <button class="ptab" data-p="C">C: 見た順</button>
+    </div>
+  </header>
+  <div class="pattern-desc" id="pattern-desc"></div>
+  <main id="main"></main>
+</div>
+
+<!-- 打席結果入力モーダル(3パターン共通で使い回し、中身をJSで出し分け) -->
+<div class="sheet-modal" id="entry-modal">
+  <div class="sheet-body">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="modal-title"></div>
+    <div id="modal-body"></div>
+    <button class="primary-btn" id="modal-save">保存</button>
+    <button class="ghost-btn" onclick="closeModal()">キャンセル</button>
+  </div>
+</div>
+
+<script>
+const BATTERS = ['谷本大知','福田龍之介','鬼頭亮太郎','中村駿','新宮直希'];
+// 伝統的な守備位置番号(実際のスコアブック表記に合わせる)
+const POSITIONS = [
+  { n: 7, label: '左' }, { n: 8, label: '中' }, { n: 9, label: '右' },
+  { n: 6, label: '遊' }, { n: 1, label: '投' }, { n: 4, label: '二' },
+  { n: 5, label: '三' }, { n: 2, label: '捕' }, { n: 3, label: '一' },
+];
+const OUT_TYPE_CHAR = { 'ゴロ': 'ゴロ', 'フライ': '飛', 'ライナー': '直' };
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// 選手ごとの状態: ログ(結果コードの配列)+タリー(打点/得点/失策)
+function freshPlayers() {
+  return BATTERS.map(name => ({ name, log: [], rbi: 0, run: 0, error: 0 }));
+}
+const data = { A: freshPlayers(), B: freshPlayers(), C: freshPlayers() };
+let currentPattern = 'A';
+
+const DESCRIPTIONS = {
+  A: '紙のやり方に忠実な最小限版。結果コード(7ヒット/5ゴロ/三振など)を追記するだけ。打球方向・タイプの詳細記録なし。',
+  B: '分析データ(打球方向・タイプ)は今まで通り記録。ただしランナー管理は廃止し、得点・打点・失策は選手ごとの+1タップに変更。',
+  C: '実際に見た順番(どこに飛んだか→打球タイプ→結果)でボタンを押す方式。得点まわりはBと同じ+1タップ。',
+};
+
+function renderTally(p) {
+  return `
+    <div class="tally-row">
+      <div class="tally"><span class="tlabel">打点</span><span class="tval">${p.rbi}</span>
+        <button class="minus" onclick="bump('${p.name}','rbi',-1)">−</button><button class="plus" onclick="bump('${p.name}','rbi',1)">+</button></div>
+      <div class="tally"><span class="tlabel">得点</span><span class="tval">${p.run}</span>
+        <button class="minus" onclick="bump('${p.name}','run',-1)">−</button><button class="plus" onclick="bump('${p.name}','run',1)">+</button></div>
+      <div class="tally"><span class="tlabel">失策</span><span class="tval">${p.error}</span>
+        <button class="minus" onclick="bump('${p.name}','error',-1)">−</button><button class="plus" onclick="bump('${p.name}','error',1)">+</button></div>
+    </div>`;
+}
+function bump(name, key, delta) {
+  const p = data[currentPattern].find(x => x.name === name);
+  p[key] = Math.max(0, p[key] + delta);
+  renderMain();
+}
+
+function renderMain() {
+  document.getElementById('pattern-desc').textContent = DESCRIPTIONS[currentPattern];
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <h2 class="sec">選手一覧(名前の右の「+」で打席結果を追加)</h2>
+    <div class="card">
+      ${data[currentPattern].map(p => `
+        <div class="player-row">
+          <div class="top">
+            <div class="name">${esc(p.name)}</div>
+            <button class="undo-btn" onclick="undo('${p.name}')">1つ戻す</button>
+            <button class="add-btn" onclick="openEntry('${p.name}')">+ 打席結果</button>
+          </div>
+          <div class="log-line">${p.log.length ? p.log.map(c => `<span class="code${c.hit ? ' hit' : ''}">${esc(c.text)}</span>`).join('　') : '(まだ記録なし)'}</div>
+          ${renderTally(p)}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+function undo(name) {
+  const p = data[currentPattern].find(x => x.name === name);
+  p.log.pop();
+  renderMain();
+}
+
+document.querySelectorAll('.ptab').forEach(b => b.addEventListener('click', () => {
+  currentPattern = b.dataset.p;
+  document.querySelectorAll('.ptab').forEach(x => x.classList.toggle('active', x === b));
+  renderMain();
+}));
+
+// ============ 打席結果入力モーダル ============
+let modalTarget = null;
+function openEntry(name) {
+  modalTarget = name;
+  document.getElementById('modal-title').textContent = `${name} の打席`;
+  if (currentPattern === 'A') renderModalA();
+  else if (currentPattern === 'B') renderModalB();
+  else renderModalC();
+  document.getElementById('entry-modal').classList.add('open');
+}
+function closeModal() { document.getElementById('entry-modal').classList.remove('open'); }
+function saveEntry(codeText, isHit) {
+  data[currentPattern].find(x => x.name === modalTarget).log.push({ text: codeText, hit: isHit });
+  closeModal();
+  renderMain();
+}
+
+// ---- パターンA: 最小限(結果カテゴリ→(該当時)守備位置番号のみ) ----
+const A_NEEDS_POS = new Set(['単打', '二塁打', '三塁打', '本塁打', 'アウト', '相手失策']);
+const A_HIT_SET = new Set(['単打', '二塁打', '三塁打', '本塁打']);
+const A_CODE = { '単打': 'ヒット', '二塁打': '二塁打', '三塁打': '三塁打', '本塁打': '本塁打', 'アウト': 'アウト', '相手失策': '失策' };
+function renderModalA() {
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <div class="step-label">結果</div>
+    <div class="btn-grid" id="a-cat">
+      <button class="opt-btn" data-cat="単打">単打</button>
+      <button class="opt-btn" data-cat="二塁打">二塁打</button>
+      <button class="opt-btn" data-cat="三塁打">三塁打</button>
+      <button class="opt-btn" data-cat="本塁打">本塁打</button>
+      <button class="opt-btn out-type" data-cat="アウト">アウト</button>
+      <button class="opt-btn" data-cat="相手失策">相手失策</button>
+      <button class="opt-btn out-type" data-cat="三振">三振</button>
+      <button class="opt-btn" data-cat="四球">四球</button>
+      <button class="opt-btn" data-cat="死球">死球</button>
+      <button class="opt-btn out-type" data-cat="犠打">犠打</button>
+    </div>
+    <div id="a-pos" style="display:none">
+      <div class="step-label">どこに飛んだか</div>
+      <div class="btn-grid">${POSITIONS.map(p => `<button class="opt-btn" data-pos="${p.n}"><span class="num">${p.n}</span>${p.label}</button>`).join('')}</div>
+    </div>`;
+  let cat = null, pos = null;
+  document.getElementById('a-cat').addEventListener('click', e => {
+    const b = e.target.closest('.opt-btn'); if (!b) return;
+    document.querySelectorAll('#a-cat .opt-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    cat = b.dataset.cat;
+    document.getElementById('a-pos').style.display = A_NEEDS_POS.has(cat) ? 'block' : 'none';
+  });
+  body.querySelector('#a-pos')?.addEventListener('click', e => {
+    const b = e.target.closest('.opt-btn'); if (!b) return;
+    document.querySelectorAll('#a-pos .opt-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    pos = b.dataset.pos;
+  });
+  document.getElementById('modal-save').onclick = () => {
+    if (!cat) return;
+    if (A_NEEDS_POS.has(cat)) saveEntry(`${pos || ''}${A_CODE[cat]}`, A_HIT_SET.has(cat));
+    else saveEntry(cat, false);
+  };
+}
+
+// ---- パターンB: 分析維持(結果→(打球時)方向番号+タイプ) ----
+function renderModalB() {
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <div class="step-label">結果</div>
+    <div class="btn-grid" id="b-result">
+      <button class="opt-btn" data-r="単打">単打</button>
+      <button class="opt-btn" data-r="二塁打">二塁打</button>
+      <button class="opt-btn" data-r="三塁打">三塁打</button>
+      <button class="opt-btn" data-r="本塁打">本塁打</button>
+      <button class="opt-btn" data-r="四球">四球</button>
+      <button class="opt-btn" data-r="死球">死球</button>
+      <button class="opt-btn out-type" data-r="三振">三振</button>
+      <button class="opt-btn out-type" data-r="アウト">アウト</button>
+      <button class="opt-btn" data-r="失策出塁">失策出塁</button>
+      <button class="opt-btn out-type" data-r="犠打">犠打</button>
+      <button class="opt-btn" data-r="犠飛">犠飛</button>
+    </div>
+    <div id="b-detail" style="display:none">
+      <div class="step-label">守備位置(打球方向と守備処理を兼ねる)</div>
+      <div class="btn-grid">${POSITIONS.map(p => `<button class="opt-btn" data-pos="${p.n}"><span class="num">${p.n}</span>${p.label}</button>`).join('')}</div>
+      <div class="step-label">打球タイプ</div>
+      <div class="btn-grid cols-4" id="b-type">
+        <button class="opt-btn" data-t="ゴロ">ゴロ</button>
+        <button class="opt-btn" data-t="フライ">フライ</button>
+        <button class="opt-btn" data-t="ライナー">ライナー</button>
+        <button class="opt-btn" data-t="内野フライ">内野<br>フライ</button>
+      </div>
+    </div>`;
+  const NEEDS_DETAIL = new Set(['単打','二塁打','三塁打','本塁打','アウト','失策出塁','犠打','犠飛']);
+  let result = null, pos = null, type = null;
+  document.getElementById('b-result').addEventListener('click', e => {
+    const b = e.target.closest('.opt-btn'); if (!b) return;
+    document.querySelectorAll('#b-result .opt-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    result = b.dataset.r;
+    document.getElementById('b-detail').style.display = NEEDS_DETAIL.has(result) ? 'block' : 'none';
+  });
+  body.querySelector('#b-detail').addEventListener('click', e => {
+    const posB = e.target.closest('[data-pos]'); const typeB = e.target.closest('[data-t]');
+    if (posB) { document.querySelectorAll('#b-detail [data-pos]').forEach(x => x.classList.remove('sel')); posB.classList.add('sel'); pos = posB.dataset.pos; }
+    if (typeB) { document.querySelectorAll('#b-detail [data-t]').forEach(x => x.classList.remove('sel')); typeB.classList.add('sel'); type = typeB.dataset.t; }
+  });
+  document.getElementById('modal-save').onclick = () => {
+    if (!result) return;
+    const isHit = ['単打','二塁打','三塁打','本塁打'].includes(result);
+    let text;
+    if (result === '単打') text = `${pos||''}安`;
+    else if (result === '失策出塁') text = `${pos||''}失(出塁)`;
+    else if (['犠打','犠飛'].includes(result)) text = `${pos||''}${result}`;
+    else if (result === 'アウト') text = `${pos||''}${OUT_TYPE_CHAR[type]||''}`;
+    else text = `${pos||''}${result}`;
+    saveEntry(text, isHit);
+  };
+}
+
+// ---- パターンC: 見た順(位置→タイプ→結果、四球等は先頭ボタンで即確定) ----
+function renderModalC() {
+  const body = document.getElementById('modal-body');
+  body.innerHTML = `
+    <div class="btn-grid cols-4" id="c-quick">
+      <button class="opt-btn" data-quick="四球">四球</button>
+      <button class="opt-btn" data-quick="死球">死球</button>
+      <button class="opt-btn out-type" data-quick="三振">三振</button>
+      <button class="opt-btn out-type" data-quick="犠打">犠打</button>
+    </div>
+    <div class="step-label">↑ 打球なしの結果はここでそのまま確定 / それ以外は↓へ</div>
+    <div class="step-label">① どこに飛んだか</div>
+    <div class="btn-grid" id="c-pos">${POSITIONS.map(p => `<button class="opt-btn" data-pos="${p.n}"><span class="num">${p.n}</span>${p.label}</button>`).join('')}</div>
+    <div class="step-label">② 打球タイプ</div>
+    <div class="btn-grid cols-4" id="c-type">
+      <button class="opt-btn" data-t="ゴロ">ゴロ</button>
+      <button class="opt-btn" data-t="フライ">フライ</button>
+      <button class="opt-btn" data-t="ライナー">ライナー</button>
+      <button class="opt-btn" data-t="内野フライ">内野<br>フライ</button>
+    </div>
+    <div class="step-label">③ 結果</div>
+    <div class="btn-grid cols-4" id="c-result">
+      <button class="opt-btn out-type" data-r="アウト">アウト</button>
+      <button class="opt-btn" data-r="ヒット">ヒット</button>
+      <button class="opt-btn" data-r="長打">長打</button>
+      <button class="opt-btn" data-r="失策">相手失策</button>
+    </div>`;
+  let pos = null, type = null, result = null, quick = null;
+  document.getElementById('c-quick').addEventListener('click', e => {
+    const b = e.target.closest('.opt-btn'); if (!b) return;
+    document.querySelectorAll('#c-quick .opt-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    quick = b.dataset.quick;
+  });
+  document.getElementById('c-pos').addEventListener('click', e => {
+    const b = e.target.closest('.opt-btn'); if (!b) return;
+    document.querySelectorAll('#c-pos .opt-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel'); pos = b.dataset.pos; quick = null;
+    document.querySelectorAll('#c-quick .opt-btn').forEach(x => x.classList.remove('sel'));
+  });
+  document.getElementById('c-type').addEventListener('click', e => {
+    const b = e.target.closest('.opt-btn'); if (!b) return;
+    document.querySelectorAll('#c-type .opt-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel'); type = b.dataset.t;
+  });
+  document.getElementById('c-result').addEventListener('click', e => {
+    const b = e.target.closest('.opt-btn'); if (!b) return;
+    document.querySelectorAll('#c-result .opt-btn').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel'); result = b.dataset.r;
+  });
+  document.getElementById('modal-save').onclick = () => {
+    if (quick) { saveEntry(quick, false); return; }
+    if (!pos || !result) return;
+    if (result === 'アウト') saveEntry(`${pos}${OUT_TYPE_CHAR[type] || ''}`, false);
+    else if (result === '失策') saveEntry(`${pos}失`, false);
+    else saveEntry(`${pos}${result}`, true);
+  };
+}
+
+renderMain();
+</script>
+
+</body>
+</html>
