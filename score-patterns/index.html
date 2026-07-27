@@ -329,10 +329,12 @@ function renderModalC() {
       <button class="opt-btn" data-t="内野フライ">内野<br>フライ</button>
     </div>
     <div class="step-label">③ 結果</div>
-    <div class="btn-grid cols-4" id="c-result">
+    <div class="btn-grid" id="c-result">
       <button class="opt-btn out-type" data-r="アウト">アウト</button>
-      <button class="opt-btn" data-r="ヒット">ヒット</button>
-      <button class="opt-btn" data-r="長打">長打</button>
+      <button class="opt-btn" data-r="単打">単打</button>
+      <button class="opt-btn" data-r="二塁打">二塁打</button>
+      <button class="opt-btn" data-r="三塁打">三塁打</button>
+      <button class="opt-btn" data-r="本塁打">本塁打</button>
       <button class="opt-btn" data-r="失策">相手失策</button>
     </div>`;
   let pos = null, type = null, result = null, quick = null;
@@ -363,6 +365,7 @@ function renderModalC() {
     if (!pos || !result) return;
     if (result === 'アウト') saveEntry(`${pos}${OUT_TYPE_CHAR[type] || ''}`, false);
     else if (result === '失策') saveEntry(`${pos}失`, false);
+    else if (result === '単打') saveEntry(`${pos}安`, true);
     else saveEntry(`${pos}${result}`, true);
   };
 }
