@@ -85,11 +85,25 @@
   table.scoreboard-table td:first-child, table.scoreboard-table th:first-child { text-align: left; font-family: inherit; font-weight: 700; padding-left: 8px; white-space: nowrap; }
   table.scoreboard-table td.total, table.scoreboard-table th.total { font-weight: 700; color: var(--accent); border-left: 2px solid var(--line); }
 
+  /* --- 次の打者(現在の打順の目印) --- */
+  .next-batter-card { padding: 14px; display: flex; align-items: center; gap: 12px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+  .next-batter-card .nb-label { font-size: 10px; color: var(--accent); font-weight: 700; letter-spacing: 0.04em; }
+  .next-batter-card .nb-name { font-size: 17px; font-weight: 700; margin-top: 2px; }
+  .next-batter-card .nb-btn { margin-left: auto; background: var(--accent); color: var(--accent-ink); border: none; border-radius: 999px; font-weight: 700; font-size: 13px; padding: 12px 18px; flex-shrink: 0; }
+
+  /* --- 直前の入力を取り消す --- */
+  .undo-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; }
+  .undo-btn { background: none; border: none; color: var(--ink-muted); font-size: 11.5px; font-weight: 700; padding: 6px 4px; display: flex; align-items: center; gap: 4px; }
+  .undo-btn:disabled { color: var(--ink-faint); opacity: 0.5; }
+  .undo-btn .desc { font-weight: 400; color: var(--ink-faint); }
+
   /* --- 自チーム攻撃: 選手ごとの結果ログ+タリー --- */
   .player-row { padding: 10px 12px; border-bottom: 1px solid var(--line); }
   .player-row:last-child { border-bottom: none; }
+  .player-row.is-current { background: color-mix(in srgb, var(--accent) 7%, transparent); }
   .player-row .top { display: flex; align-items: center; gap: 8px; }
   .player-row .name { font-weight: 700; font-size: 13.5px; flex: 1; min-width: 0; }
+  .player-row .on-deck { font-size: 9.5px; color: var(--accent); font-weight: 700; border: 1px solid var(--accent); border-radius: 999px; padding: 2px 7px; flex-shrink: 0; }
   .add-btn { background: var(--surface-2); border: 1px solid var(--line); color: var(--accent); font-weight: 700; font-size: 11px; padding: 6px 12px; border-radius: 999px; flex-shrink: 0; }
   .log-line { font-size: 12.5px; color: var(--ink-muted); margin-top: 6px; min-height: 18px; word-break: break-all; }
   .log-line .code { color: var(--ink); font-weight: 600; }
@@ -159,14 +173,7 @@
     <!-- 画面1: 試合設定 -->
     <section id="tab-setup">
       <h2 class="sec">打順・守備を設定(自チーム)</h2>
-      <div class="card">
-        <div class="lineup-row"><div class="order-badge">1</div><div class="name">谷本大知</div><select class="pos-select"><option>三塁</option></select></div>
-        <div class="lineup-row"><div class="order-badge">2</div><div class="name">福田龍之介</div><select class="pos-select"><option>遊撃</option></select></div>
-        <div class="lineup-row"><div class="order-badge">3</div><div class="name">鬼頭亮太郎</div><select class="pos-select"><option>捕手</option></select></div>
-        <div class="lineup-row"><div class="order-badge">4</div><div class="name">中村駿</div><select class="pos-select"><option>投手</option></select></div>
-        <div class="lineup-row"><div class="order-badge">5</div><div class="name">新宮直希</div><select class="pos-select"><option>一塁</option></select></div>
-        <div class="lineup-row"><div class="order-badge">+</div><div class="name" style="color:var(--ink-faint)">メンバーを追加...</div></div>
-      </div>
+      <div class="card" id="lineup-card"></div>
       <div class="note" style="margin-top:10px">相手チームの選手個別の登録は不要です(相手の打席は「結果」と「自チームの誰が処理したか」だけ記録します)。投手記録(投球回・自責点等)は、ここで設定した「誰がいつ投手だったか」+ 打席結果から自動計算します。</div>
       <button class="primary-btn" onclick="switchTab('sheet')">試合を開始する →</button>
     </section>
@@ -185,9 +192,19 @@
       <h2 class="sec">スコアボード</h2>
       <div class="score-wrap" style="margin-bottom:14px" id="scoreboard-wrap"></div>
 
+      <div class="undo-bar"><button class="undo-btn" id="undo-btn" disabled onclick="undoLast()">↩ <span id="undo-label">取り消せる操作はありません</span></button></div>
+
       <!-- 自チーム攻撃ビュー -->
       <div id="view-off">
-        <h2 class="sec">打席結果(名前の右の「+」でこの打席を記録)<button class="link-btn" onclick="openSubModal()">交代 →</button></h2>
+        <div class="card next-batter-card">
+          <div>
+            <div class="nb-label">次の打者</div>
+            <div class="nb-name" id="next-batter-name">谷本大知</div>
+          </div>
+          <button class="nb-btn" onclick="openEntry(BATTERS[currentBatterIdx], true)">+ 記録する</button>
+        </div>
+
+        <h2 class="sec" style="margin-top:14px">選手一覧(順不同で記録・修正もOK)<button class="link-btn" onclick="openSubModal()">交代 →</button></h2>
         <div class="card" id="off-list"></div>
         <div class="legend-row" style="display:flex; gap:8px; flex-wrap:wrap; font-size:9.5px; color:var(--ink-faint); margin-top:8px">
           <span>■安打系は緑字</span><span>数字=守備位置(1投 2捕 3一 4二 5三 6遊 7左 8中 9右)</span>
@@ -314,10 +331,19 @@
       <option>1番 谷本大知</option><option>2番 福田龍之介</option><option>3番 鬼頭亮太郎</option>
       <option selected>4番 中村駿</option><option>5番 新宮直希</option>
     </select>
-    <label class="field-label">交代後の選手</label>
-    <select class="field-select">
-      <option selected>藤原湧</option><option>大川滉平</option><option>末光弘明</option>
-    </select>
+
+    <div id="sub-bat-fields">
+      <label class="field-label">交代後の選手(代打・代走)</label>
+      <select class="field-select">
+        <option selected>藤原湧</option><option>大川滉平</option><option>末光弘明</option>
+      </select>
+    </div>
+    <div id="sub-def-fields" style="display:none">
+      <label class="field-label">新しい守備位置</label>
+      <select class="field-select" id="sub-pos-select"></select>
+      <div class="note" style="margin-top:8px">同じ打順のまま守備位置だけ変える場合はこちら(打者は交代しません)</div>
+    </div>
+
     <label class="field-label">何回から</label>
     <select class="field-select"><option>4回裏〜</option><option>5回表〜</option></select>
     <button class="primary-btn save-btn" onclick="closeSubModal()">交代を記録</button>
@@ -337,6 +363,21 @@ function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&
 const posGridHtml = POSITIONS.map(p => `<button class="opt-btn" data-pos="${p.n}"><span class="num">${p.n}</span>${p.label}</button>`).join('');
 document.getElementById('off-pos').innerHTML = posGridHtml;
 document.getElementById('def-pos').innerHTML = posGridHtml;
+
+// --- 試合設定: 打順・守備位置(全ポジションから選べる) ---
+const FULL_POSITIONS = ['投手', '捕手', '一塁', '二塁', '三塁', '遊撃', '左翼', '中堅', '右翼'];
+const DEFAULT_POS = { '谷本大知': '三塁', '福田龍之介': '遊撃', '鬼頭亮太郎': '捕手', '中村駿': '投手', '新宮直希': '一塁' };
+function renderLineupCard() {
+  const wrap = document.getElementById('lineup-card');
+  wrap.innerHTML = BATTERS.map((name, i) => `
+    <div class="lineup-row">
+      <div class="order-badge">${i + 1}</div>
+      <div class="name">${esc(name)}</div>
+      <select class="pos-select">${FULL_POSITIONS.map(p => `<option ${p === DEFAULT_POS[name] ? 'selected' : ''}>${p}</option>`).join('')}</select>
+    </div>`).join('') + `
+    <div class="lineup-row"><div class="order-badge">+</div><div class="name" style="color:var(--ink-faint)">メンバーを追加...</div></div>`;
+}
+renderLineupCard();
 
 // --- 試合全体の状態 ---
 const game = { inning: 3, half: 'off', outs: 0, score: { off: { 1: 1, 2: 0 }, def: { 1: 0, 2: 1 } } };
@@ -375,6 +416,22 @@ function renderScoreboard() {
 const IS_HIT = new Set(['単打', '二塁打', '三塁打', '本塁打']);
 const OFF_OUT_RESULTS = new Set(['三振', 'アウト', '犠打']);
 const players = BATTERS.map(name => ({ name, log: [], rbi: 0, run: 0, error: 0 }));
+let currentBatterIdx = 0;
+
+// --- 直前の操作を1回だけ取り消せる仕組み(試合状態ごと丸ごと復元) ---
+let lastAction = null;
+function snapshotGame() { return JSON.parse(JSON.stringify(game)); }
+function recordAction(desc, undoFn) { lastAction = { desc, undoFn }; renderUndoBar(); }
+function renderUndoBar() {
+  document.getElementById('undo-btn').disabled = !lastAction;
+  document.getElementById('undo-label').textContent = lastAction ? `${lastAction.desc} を取り消す` : '取り消せる操作はありません';
+}
+function undoLast() {
+  if (!lastAction) return;
+  lastAction.undoFn();
+  lastAction = null;
+  renderUndoBar();
+}
 function buildOffCode(result, pos, type) {
   if (['四球', '死球', '三振', '犠打'].includes(result)) return result;
   if (result === 'アウト') return `${pos}${OUT_TYPE_CHAR[type] || ''}`;
@@ -403,24 +460,27 @@ function bump(name, key, delta) {
 }
 function renderOffList() {
   const wrap = document.getElementById('off-list');
-  wrap.innerHTML = players.map(p => `
-    <div class="player-row">
+  wrap.innerHTML = players.map((p, i) => `
+    <div class="player-row${i === currentBatterIdx ? ' is-current' : ''}">
       <div class="top">
         <div class="name">${esc(p.name)}</div>
-        <button class="add-btn" onclick="openEntry('${p.name}')">+ 打席結果</button>
+        ${i === currentBatterIdx ? '<span class="on-deck">次の打者</span>' : ''}
+        <button class="add-btn" onclick="openEntry('${p.name}', false)">+ 打席結果</button>
       </div>
       <div class="log-line">${p.log.length ? p.log.map(c => `<span class="code${c.hit ? ' hit' : ''}">${esc(c.text)}</span>`).join('　') : '(まだ記録なし)'}</div>
       ${renderTally(p)}
     </div>`).join('');
+  document.getElementById('next-batter-name').textContent = BATTERS[currentBatterIdx];
 }
 
-let entryTarget = null, offPos = null, offType = null, offResult = null, offQuick = null;
+let entryTarget = null, entryIsNextBatter = false, offPos = null, offType = null, offResult = null, offQuick = null;
 function resetOffModal() {
   offPos = null; offType = null; offResult = null; offQuick = null;
   document.querySelectorAll('#off-quick .opt-btn, #off-pos .opt-btn, #off-type .opt-btn, #off-result .opt-btn').forEach(b => b.classList.remove('sel'));
 }
-function openEntry(name) {
+function openEntry(name, isNextBatter) {
   entryTarget = name;
+  entryIsNextBatter = !!isNextBatter;
   document.getElementById('modal-title').textContent = `${name} の打席`;
   resetOffModal();
   document.getElementById('entry-modal').classList.add('open');
@@ -452,10 +512,22 @@ document.getElementById('off-save').addEventListener('click', () => {
   let result, text;
   if (offQuick) { result = offQuick; text = offQuick; }
   else { if (!offPos || !offResult) return; result = offResult; text = buildOffCode(offResult, offPos, offType); }
+
+  const prevGame = snapshotGame();
+  const prevBatterIdx = currentBatterIdx;
   p.log.push({ text, hit: IS_HIT.has(result) });
   closeModal();
+  if (entryIsNextBatter) currentBatterIdx = (currentBatterIdx + 1) % players.length;
   renderOffList();
   if (OFF_OUT_RESULTS.has(result)) registerOut(); else updateStateBar();
+
+  recordAction(`${entryTarget}「${text}」`, () => {
+    p.log.pop();
+    currentBatterIdx = prevBatterIdx;
+    Object.assign(game, prevGame);
+    renderOffList();
+    updateStateBar();
+  });
 });
 
 // --- 自チーム守備側(相手攻撃) ---
@@ -520,20 +592,33 @@ document.getElementById('def-save').addEventListener('click', () => {
     else if (defResult === '安打') { text = '安打'; }
     else { text = '自チームの失策'; }
   }
+
+  const prevGame = snapshotGame();
   defPlays.push({ batnum: (defPlays.length % 9) + 1, text, pos, outMark });
   closeDefModal();
   renderPlayLog();
   addRuns('def', defRuns);
   if (defQuick === '三振' || defResult === 'アウト') registerOut(); else updateStateBar();
+
+  recordAction(`相手打者「${text}」`, () => {
+    defPlays.pop();
+    Object.assign(game, prevGame);
+    renderPlayLog();
+    updateStateBar();
+  });
 });
 
 function setHalf(half) { game.half = half; updateStateBar(); }
 document.querySelectorAll('.half-btn').forEach(b => b.addEventListener('click', () => setHalf(b.dataset.half)));
 
+document.getElementById('sub-pos-select').innerHTML = FULL_POSITIONS.map(p => `<option>${p}</option>`).join('');
 function openSubModal() { document.getElementById('sub-modal').classList.add('open'); }
 function closeSubModal() { document.getElementById('sub-modal').classList.remove('open'); }
 document.querySelectorAll('[data-subtype]').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('[data-subtype]').forEach(x => x.classList.remove('sel')); b.classList.add('sel');
+  const isDef = b.dataset.subtype === 'def';
+  document.getElementById('sub-bat-fields').style.display = isDef ? 'none' : 'block';
+  document.getElementById('sub-def-fields').style.display = isDef ? 'block' : 'none';
 }));
 
 function switchTab(name) {
@@ -547,6 +632,7 @@ document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', (
 renderOffList();
 renderPlayLog();
 updateStateBar();
+renderUndoBar();
 </script>
 
 </body>
