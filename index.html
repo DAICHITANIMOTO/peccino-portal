@@ -317,6 +317,27 @@
     border: 1px solid color-mix(in srgb, var(--amber) 35%, transparent);
   }
 
+  /* ---- 記念日バナー(隠しギミック: 特定の日付にだけ出現) ---- */
+  .anniversary-banner {
+    padding: 12px 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 12px;
+    border-left: 3px solid var(--amber);
+  }
+  .anniversary-banner .an-emoji { font-size: 22px; flex-shrink: 0; }
+  .anniversary-banner .an-label { font-size: 9.5px; letter-spacing: 0.1em; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; }
+  .anniversary-banner .an-text { font-size: 12.5px; color: var(--ink-muted); margin-top: 2px; line-height: 1.5; }
+
+  /* ---- 一番下まで見た人への隠しメッセージ ---- */
+  .scroll-secret {
+    position: fixed; left: 12px; right: 12px; bottom: 74px; z-index: 40;
+    padding: 10px 14px; border-radius: 12px; text-align: center;
+    background: color-mix(in srgb, var(--surface-2) 92%, transparent); border: 1px solid var(--line);
+    font-size: 11.5px; color: var(--ink-muted); backdrop-filter: blur(4px);
+    opacity: 0; transform: translateY(6px); pointer-events: none;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .scroll-secret.show { opacity: 1; transform: translateY(0); }
+  .scroll-secret .ss-accent { color: var(--accent); font-weight: 700; }
+
   /* ---- Games list ---- */
   .game-row {
     display: flex; align-items: center; gap: 10px;
@@ -420,6 +441,8 @@
   </header>
 
   <main class="content" id="main"></main>
+
+  <div class="scroll-secret" id="scroll-secret" aria-hidden="true">ここまで見てくれてありがとう。<span class="ss-accent">GO THE DISTANCE.</span></div>
 
   <nav class="tabbar" id="tabbar">
     <a href="#/dashboard" data-route="dashboard" data-link>
@@ -762,6 +785,8 @@ function renderDashboard(main) {
       <div class="slogan-text">FUNWIN <span class="accent">〜</span> GO THE DISTANCE</div>
     </div>
 
+    ${renderAnniversaryBanner()}
+
     <div id="mypage-shortcut"></div>
 
     <div class="hero-record card">
@@ -806,6 +831,20 @@ function renderDashboard(main) {
     </footer>
   `;
   renderMypageShortcut();
+}
+
+// ---- 記念日バナー(隠しギミック: チーム記録上の初勝利の日=6/8にだけ出現) ----
+function renderAnniversaryBanner() {
+  const today = new Date();
+  if (today.getMonth() !== 5 || today.getDate() !== 8) return '';
+  return `
+    <div class="card anniversary-banner">
+      <div class="an-emoji">🎉</div>
+      <div>
+        <div class="an-label">Team Anniversary</div>
+        <div class="an-text">2024/6/8、対PEACE戦 3-1。<br>データ上に残るPeccino初勝利の日です。</div>
+      </div>
+    </div>`;
 }
 
 // ---- マイページ・ショートカット(初回に選手を選ぶと、次回からホームに自分のページへのリンクが出る) ----
@@ -1590,6 +1629,32 @@ function renderGameDetail(main, gameId) {
       tapCount = 0;
       launchConfetti();
     }
+  });
+})();
+
+// ---- 隠しギミック: ページの一番下までスクロールした人だけへのメッセージ ----
+(function setupScrollSecret() {
+  const el = document.getElementById('scroll-secret');
+  if (!el) return;
+  let atBottom = false, hideTimer = null;
+  function checkBottom() {
+    const doc = document.documentElement;
+    const scrollable = doc.scrollHeight > window.innerHeight + 60;
+    const nearBottom = scrollable && (window.scrollY + window.innerHeight >= doc.scrollHeight - 4);
+    if (nearBottom && !atBottom) {
+      atBottom = true;
+      el.classList.add('show');
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => el.classList.remove('show'), 3500);
+    } else if (!nearBottom) {
+      atBottom = false;
+    }
+  }
+  window.addEventListener('scroll', checkBottom, { passive: true });
+  window.addEventListener('hashchange', () => {
+    atBottom = false;
+    el.classList.remove('show');
+    clearTimeout(hideTimer);
   });
 })();
 
