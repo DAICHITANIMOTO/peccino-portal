@@ -180,6 +180,16 @@
   .slogan-banner .slogan-text { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: 0.01em; margin-top: 3px; }
   .slogan-banner .slogan-text .accent { color: var(--accent); }
 
+  /* ---- マイページ・ショートカット ---- */
+  .mypage-card { padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px; }
+  .mypage-card .mp-label { font-size: 10px; color: var(--ink-faint); font-weight: 700; letter-spacing: 0.04em; }
+  .mypage-card .mp-name { font-size: 15px; font-weight: 700; margin-top: 1px; }
+  .mypage-card .mp-go { margin-left: auto; background: var(--accent); color: var(--accent-ink); border-radius: 999px; font-weight: 700; font-size: 12px; padding: 8px 14px; flex-shrink: 0; }
+  .mypage-card .mp-change { font-size: 10.5px; color: var(--ink-faint); text-decoration: underline; flex-shrink: 0; margin-left: 4px; }
+  .mypage-setup select.field-select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-size: 12.5px; padding: 7px 10px; flex: 1; min-width: 0; }
+  .mypage-setup { padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .mypage-setup .mp-setup-label { font-size: 11.5px; color: var(--ink-muted); flex-shrink: 0; }
+
   .hero-record {
     padding: 18px; margin-bottom: 20px;
     display: flex; align-items: center; gap: 16px;
@@ -752,6 +762,8 @@ function renderDashboard(main) {
       <div class="slogan-text">FUNWIN <span class="accent">〜</span> GO THE DISTANCE</div>
     </div>
 
+    <div id="mypage-shortcut"></div>
+
     <div class="hero-record card">
       <div class="hero-ring" style="--pct:${(winPct * 100).toFixed(0)}"><div class="hole"><span class="pct num">${(winPct * 100).toFixed(0)}<span style="font-size:10px">%</span></span></div></div>
       <div>
@@ -793,6 +805,43 @@ function renderDashboard(main) {
       <span>${esc(LATEST_YEAR)}年シーズン基準</span>
     </footer>
   `;
+  renderMypageShortcut();
+}
+
+// ---- マイページ・ショートカット(初回に選手を選ぶと、次回からホームに自分のページへのリンクが出る) ----
+const MYPAGE_KEY = 'peccino_my_player';
+function renderMypageShortcut() {
+  const el = document.getElementById('mypage-shortcut');
+  if (!el) return;
+  const saved = localStorage.getItem(MYPAGE_KEY);
+  if (saved && playerByName[saved]) {
+    el.innerHTML = `
+      <a class="card mypage-card" ${linkAttr('/players/' + encodeURIComponent(saved))}>
+        <div>
+          <div class="mp-label">⭐ マイページ</div>
+          <div class="mp-name">${esc(saved)}</div>
+        </div>
+        <span class="mp-go">見る →</span>
+      </a>
+      <div style="text-align:right; margin-top:-10px; margin-bottom:14px;"><button class="mp-change" id="mypage-change">選手を変更</button></div>
+    `;
+    document.getElementById('mypage-change').addEventListener('click', () => { localStorage.removeItem(MYPAGE_KEY); renderMypageShortcut(); });
+  } else {
+    el.innerHTML = `
+      <div class="card mypage-setup">
+        <span class="mp-setup-label">あなたは誰?</span>
+        <select class="field-select" id="mypage-select">
+          <option value="">選手を選ぶ</option>
+          ${[...players].sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999)).map(p => `<option value="${esc(p.name)}">${esc(p.name)} #${esc(p.number)}</option>`).join('')}
+        </select>
+      </div>
+    `;
+    document.getElementById('mypage-select').addEventListener('change', e => {
+      if (!e.target.value) return;
+      localStorage.setItem(MYPAGE_KEY, e.target.value);
+      renderMypageShortcut();
+    });
+  }
 }
 
 function gameRowHtml(g) {
