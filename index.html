@@ -1584,9 +1584,9 @@ function renderGameDetail(main, gameId) {
     if (!logo) return;
     tapCount++;
     clearTimeout(tapTimer);
-    tapTimer = setTimeout(() => { tapCount = 0; }, 1500);
+    tapTimer = setTimeout(() => { tapCount = 0; }, 2000);
     logo.classList.remove('spin'); void logo.offsetWidth; logo.classList.add('spin');
-    if (tapCount >= 8) {
+    if (tapCount >= 3) {
       tapCount = 0;
       launchConfetti();
     }
