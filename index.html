@@ -166,6 +166,14 @@
   a.card:active, .card.tappable:active { transform: scale(0.98); }
 
   /* ---- Hero record ---- */
+  .slogan-banner {
+    padding: 12px 16px; margin-bottom: 14px;
+    border-left: 3px solid var(--accent);
+  }
+  .slogan-banner .slogan-label { font-size: 9.5px; letter-spacing: 0.1em; color: var(--ink-faint); font-weight: 700; text-transform: uppercase; }
+  .slogan-banner .slogan-text { font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 17px; letter-spacing: 0.01em; margin-top: 3px; }
+  .slogan-banner .slogan-text .accent { color: var(--accent); }
+
   .hero-record {
     padding: 18px; margin-bottom: 20px;
     display: flex; align-items: center; gap: 16px;
@@ -226,11 +234,14 @@
   /* ---- ランキング表(選手名列を狭めて、選んだ指標がスクロールなしで見えるように) ---- */
   table.ranking-table { min-width: 0; table-layout: fixed; }
   table.ranking-table col.col-rank { width: 34px; }
-  table.ranking-table col.col-name { width: 96px; }
-  table.ranking-table col.col-g { width: 46px; }
+  table.ranking-table col.col-name { width: 92px; }
+  table.ranking-table col.col-stat { width: 54px; }
   table.ranking-table th, table.ranking-table td { white-space: normal; word-break: break-word; }
   table.ranking-table td:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   table.ranking-table td:nth-child(2) .stat-number { display: block; font-size: 9.5px; }
+  table.ranking-table th.sort-active { color: var(--accent); }
+  table.ranking-table td.sort-active { position: relative; }
+  table.ranking-table th.sort-active::after { content: '▾'; margin-left: 2px; font-size: 8px; }
   .rank-num { display:inline-flex; width:20px; height:20px; border-radius:6px; align-items:center; justify-content:center; font-size:11px; background:var(--surface-2); }
   tr:nth-child(1) .rank-num { background: var(--amber); color: #241a05; }
   tr:nth-child(2) .rank-num { background: color-mix(in srgb, var(--ink-faint) 40%, var(--surface-2)); }
@@ -721,6 +732,11 @@ function renderDashboard(main) {
   }
 
   main.innerHTML = `
+    <div class="card slogan-banner">
+      <div class="slogan-label">${esc(LATEST_YEAR)} Season Slogan</div>
+      <div class="slogan-text">FUNWIN <span class="accent">〜</span> GO THE DISTANCE</div>
+    </div>
+
     <div class="hero-record card">
       <div class="hero-ring" style="--pct:${(winPct * 100).toFixed(0)}"><div class="hole"><span class="pct num">${(winPct * 100).toFixed(0)}<span style="font-size:10px">%</span></span></div></div>
       <div>
@@ -832,6 +848,15 @@ const PITCHING_METRICS = [
   ['kbb', 'K/BB', v => isFinite(v.kbb) ? v.kbb.toFixed(2) : '∞'],
 ];
 const ASC_METRICS = new Set(['era', 'whip', 'fip']);
+// ランキング表に常時表示する基本指標(並び替えで選んだ指標がこの中になければ末尾に追加表示する)
+const BATTING_BASE_COLUMNS = [
+  ['g', '試合', v => v.g], ['avg', '打率', v => fmtAvg(v.avg)], ['hr', '本塁打', v => v.hr],
+  ['rbi', '打点', v => v.rbi], ['sb', '盗塁', v => v.sb], ['ops', 'OPS', v => fmtAvg(v.ops)],
+];
+const PITCHING_BASE_COLUMNS = [
+  ['g', '登板', v => v.g], ['era', '防御率', v => fmtEra(v.era)], ['wins', '勝利', v => v.wins],
+  ['so', '奪三振', v => v.so], ['whip', 'WHIP', v => v.whip.toFixed(2)],
+];
 
 function renderRanking(main) {
   const gameIdSet = new Set(gamesForFilter({ year: rankingState.year }).map(g => g.game_id));
@@ -845,6 +870,9 @@ function renderRanking(main) {
   rows.sort((a, b) => asc ? a[rankingState.metric] - b[rankingState.metric] : b[rankingState.metric] - a[rankingState.metric]);
 
   const metricDef = metrics.find(m => m[0] === rankingState.metric);
+  const baseColumns = isBatting ? BATTING_BASE_COLUMNS : PITCHING_BASE_COLUMNS;
+  // 選んだ指標が基本列に無ければ、末尾に追加して必ず見えるようにする(基本列はソートに関わらず常時表示)
+  const displayColumns = baseColumns.some(c => c[0] === rankingState.metric) ? baseColumns : [...baseColumns, metricDef];
 
   main.innerHTML = `
     <p class="page-sub">最低出場条件: 打者=打数5以上 / 投手=投球回1以上</p>
@@ -866,18 +894,19 @@ function renderRanking(main) {
 
     <div class="card table-wrap">
       <table class="ranking-table">
-        <colgroup><col class="col-rank"><col class="col-name"><col class="col-g"><col><col></colgroup>
-        <thead><tr><th>順位</th><th>選手</th><th class="num-h">試合</th><th class="num-h">${esc(metricDef[1])}</th><th class="num-h">${isBatting ? 'OPS' : '防御率'}</th></tr></thead>
+        <colgroup><col class="col-rank"><col class="col-name">${displayColumns.map(() => '<col class="col-stat">').join('')}</colgroup>
+        <thead><tr>
+          <th>順位</th><th>選手</th>
+          ${displayColumns.map(([k, label]) => `<th class="num-h${k === rankingState.metric ? ' sort-active' : ''}">${esc(label)}</th>`).join('')}
+        </tr></thead>
         <tbody>
           ${rows.map((r, i) => `
             <tr class="clickable" data-name="${esc(r.name)}">
               <td class="num"><span class="rank-num">${i + 1}</span></td>
               <td>${esc(r.name)}<span class="stat-number num" style="color:var(--ink-faint)">#${esc(r.number)}</span></td>
-              <td class="num">${r.g}</td>
-              <td class="num highlight">${metricDef[2](r)}</td>
-              <td class="num">${isBatting ? fmtAvg(r.ops) : fmtEra(r.era)}</td>
+              ${displayColumns.map(([k, , fmt]) => `<td class="num${k === rankingState.metric ? ' highlight sort-active' : ''}">${fmt(r)}</td>`).join('')}
             </tr>
-          `).join('') || `<tr><td colspan="5" class="empty-state">該当データがありません</td></tr>`}
+          `).join('') || `<tr><td colspan="${2 + displayColumns.length}" class="empty-state">該当データがありません</td></tr>`}
         </tbody>
       </table>
     </div>
