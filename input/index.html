@@ -188,7 +188,10 @@
   .toast { position:fixed; left:50%; bottom:88px; transform:translateX(-50%); background:var(--surface-raised); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:9px 16px; font-size:12px; font-weight:700; z-index:50; opacity:0; transition:opacity .2s; pointer-events:none; box-shadow:0 6px 20px rgba(0,0,0,.3); }
   .toast.show { opacity:1; }
 
-  textarea.export-box { width:100%; height:200px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; color:var(--ink); font-size:11px; font-family:ui-monospace,Menlo,Consolas,monospace; padding:10px; margin-top:8px; }
+  .fmt-toggle { display:flex; gap:6px; background:var(--surface-2); border-radius:999px; padding:3px; margin-top:10px; }
+  .fmt-toggle .fmt-btn { flex:1; border:none; background:none; color:var(--ink-muted); font-weight:700; font-size:12px; padding:9px 4px; border-radius:999px; }
+  .fmt-toggle .fmt-btn.active { background:var(--accent); color:var(--accent-ink); }
+  textarea.export-box { width:100%; height:240px; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; color:var(--ink); font-size:11.5px; font-family:ui-monospace,Menlo,Consolas,monospace; line-height:1.5; padding:10px; margin-top:8px; white-space:pre; }
 </style>
 </head>
 <body>
@@ -309,13 +312,18 @@
     <!-- 3. 書き出し -->
     <section class="screen" id="screen-export">
       <h2 class="sec">試合終了 — データの書き出し</h2>
-      <div class="note">下のデータをコピーして、LINEグループに貼るか谷本に送ってください。サイト(成績ポータル)へは谷本が反映します。</div>
+      <div class="note">下のテキストをコピーして、LINEグループに貼るか谷本に送ってください。サイト(成績ポータル)へは谷本が反映します。</div>
       <div class="card" style="padding:12px">
         <div id="export-summary" style="font-size:12.5px;line-height:1.7"></div>
+        <div class="fmt-toggle">
+          <button class="fmt-btn active" data-fmt="text">読みやすいテキスト</button>
+          <button class="fmt-btn" data-fmt="json">詳細データ(JSON)</button>
+        </div>
+        <div id="export-charcount" style="font-size:10px;color:var(--ink-faint);text-align:right;margin-top:4px"></div>
         <textarea class="export-box" id="export-box" readonly></textarea>
         <button class="primary-btn" id="copy-btn">📋 コピー</button>
         <button class="ghost-btn" id="share-btn">LINE等で送る</button>
-        <button class="ghost-btn" id="download-btn">ファイルで保存(.json)</button>
+        <button class="ghost-btn" id="download-btn">ファイルで保存</button>
       </div>
       <button class="ghost-btn" id="back-to-sheet-btn">← まだ入力を続ける</button>
       <button class="danger-btn" id="new-game-btn">この試合を完了 → 新しい試合を始める</button>
@@ -476,7 +484,7 @@ var POS_BTNS = [
   {n:6,label:"遊"},{n:1,label:"投"},{n:4,label:"二"},
   {n:5,label:"三"},{n:2,label:"捕"},{n:3,label:"一"}
 ];
-var TYPE_CHAR = {"ゴロ":"ゴ","フライ":"飛","ライナー":"直","内野フライ":"内飛"};
+var TYPE_CHAR = {"ゴロ":"ゴ","フライ":"飛","ライナー":"直","内野フライ":"内"};
 var HIT_RESULTS = {"単打":1,"二塁打":1,"三塁打":1,"本塁打":1};
 var OFF_OUT_RESULTS = {"三振":1,"アウト":1,"犠打":1,"犠飛":1};
 var RESULT_SHORT = {"単打":"安","二塁打":"二","三塁打":"三","本塁打":"本","失策出塁":"失"};
@@ -656,8 +664,7 @@ function renderArchiveList(){
     b.addEventListener("click", function(){
       var item = getArchive().find(function(x){ return String(x.id)===b.dataset.aid; });
       if(!item) return;
-      var json = JSON.stringify(exportFor(item.data), null, 2);
-      navigator.clipboard.writeText(json).then(function(){ toast("コピーしました"); }, function(){ toast("コピーできませんでした"); });
+      navigator.clipboard.writeText(buildText(item.data)).then(function(){ toast("コピーしました"); }, function(){ toast("コピーできませんでした"); });
     });
   });
   $("archive-list").querySelectorAll(".adel").forEach(function(b){
@@ -757,8 +764,9 @@ function notation(ab){
   if(ab.result==="三振") return "三振";
   if(ab.result==="犠打") return "犠打";
   if(ab.result==="犠飛") return "犠飛";
-  if(ab.result==="アウト") return String(ab.pos)+(TYPE_CHAR[ab.ballType]||"");
-  return String(ab.pos)+(RESULT_SHORT[ab.result]||"");
+  var tc = TYPE_CHAR[ab.ballType] || "";
+  if(ab.result==="アウト") return String(ab.pos)+tc;
+  return String(ab.pos)+(RESULT_SHORT[ab.result]||"")+tc;
 }
 function cellClass(ab){
   if(!ab) return "empty";
@@ -794,7 +802,7 @@ function renderGrid(){
   });
   $("grid-legend").innerHTML =
     "数字＝守備位置(1投 2捕 3一 4二 5三 6遊 7左 8中 9右)　"
-    + "ゴ=ゴロ 飛=フライ 直=ライナー 内飛=内野フライ　安=単打 二/三=塁打 本=本塁打 失=相手失策　"
+    + "ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ　安=単打 二/三=塁打 本=本塁打 失=相手失策　"
     + "<span style='color:var(--accent)'>緑=安打</span>";
 }
 function renderTally(){
@@ -1119,6 +1127,101 @@ function exportFor(g){
   };
 }
 function buildExport(){ return exportFor(G); }
+
+function padR(s,n){ s=String(s==null?"":s); while(strWidth(s)<n) s+=" "; return s; }
+function strWidth(s){ var w=0; for(var i=0;i<s.length;i++){ w += s.charCodeAt(i)>0x2E7F ? 2 : 1; } return w; }
+function trimTrailingNull(a){ var arr=a.slice(); while(arr.length && arr[arr.length-1]==null) arr.pop(); return arr; }
+
+// 人が読める&取り込みできるテキスト。打席トークンに守備位置+結果+打球タイプを全部含める
+function buildText(g){
+  var d = exportFor(g);
+  var selfT = d.linescore.self.reduce(function(a,b){return a+(b||0);},0);
+  var oppT  = d.linescore.opp.reduce(function(a,b){return a+(b||0);},0);
+  var res = selfT>oppT?"○ 勝ち":(selfT<oppT?"● 負け":"△ 引分け");
+  var L = [];
+  L.push("Peccino 試合記録");
+  L.push((d.game.date||"") + " vs " + (d.game.opponent||"(未設定)") + (d.game.place?(" @"+d.game.place):""));
+  L.push("記録:" + (d.game.recordedBy||"") + " / " + (d.game.firstAttack?"先攻":"後攻"));
+  L.push("");
+
+  var ss = trimTrailingNull(d.linescore.self), os = trimTrailingNull(d.linescore.opp);
+  var n = Math.max(ss.length, os.length, 1);
+  function lsLine(label, arr, tot){
+    var cells=[]; for(var i=0;i<n;i++) cells.push(arr[i]==null?"-":String(arr[i]));
+    return padR(label,12) + cells.join(" ") + "  = " + tot;
+  }
+  L.push("■ スコア  " + res);
+  L.push(lsLine("Peccino", ss, selfT));
+  L.push(lsLine(d.game.opponent||"相手", os, oppT));
+  L.push("");
+
+  L.push("■ 打撃");
+  var byOrder = {};
+  d.atBats.forEach(function(ab){ (byOrder[ab.order]=byOrder[ab.order]||[]).push(ab); });
+  (g.lineup||[]).forEach(function(r){
+    var abs = byOrder[r.order] || [];
+    var groups = [], cur = null;
+    abs.forEach(function(ab){
+      var nm = ab.batter || r.name;
+      if(!cur || cur.name!==nm){ cur = { name:nm, toks:[] }; groups.push(cur); }
+      cur.toks.push(ab.notation);
+    });
+    if(!groups.length) groups = [{ name:r.name, toks:[] }];
+    groups.forEach(function(gr, gi){
+      var t = (g.tally && g.tally[gr.name]) || { rbi:0, run:0, error:0 };
+      var ex = [];
+      if(t.rbi) ex.push("打点"+t.rbi);
+      if(t.run) ex.push("得点"+t.run);
+      if(t.error) ex.push("失策"+t.error);
+      L.push((gi===0 ? String(r.order) : " ") + " " + padR(gr.name+" ",13)
+        + (gr.toks.join(" ") || "-") + (ex.length ? ("   "+ex.join(" ")) : ""));
+    });
+  });
+  L.push("");
+
+  if(d.defense.length){
+    L.push("■ 守備(相手の打席)");
+    var byInn = {};
+    d.defense.forEach(function(p){ (byInn[p.inning]=byInn[p.inning]||[]).push(p); });
+    Object.keys(byInn).sort(function(a,b){ return a-b; }).forEach(function(inn){
+      var toks = byInn[inn].map(function(p){
+        var tc = TYPE_CHAR[p.ballType] || "";
+        var base;
+        if(p.result==="三振") base = "三振";
+        else if(p.result==="四球" || p.result==="死球") base = p.result;
+        else if(p.result==="アウト") base = (p.fielder||"") + tc;
+        else if(p.result==="安打") base = (p.fielder||"") + "安" + tc;
+        else base = (p.fielder||"") + "失" + tc;
+        var out = (p.result==="アウト" || p.result==="三振") ? "○" : "";
+        var rn = p.runsAllowed ? ("("+p.runsAllowed+"点)") : "";
+        return base + out + rn;
+      });
+      L.push(inn + "回: " + toks.join(" / "));
+    });
+    L.push("");
+  }
+
+  if((g.subs||[]).length){
+    L.push("■ 交代");
+    (g.subs||[]).forEach(function(s){ L.push((s.from||"") + " " + s.detail); });
+    L.push("");
+  }
+
+  L.push("記号: 数字=守備位置(1投2捕3一4二5三6遊7左8中9右) ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ / 安=単打 二三本=塁打 失=相手失策 ○=アウト");
+  return L.join("\n");
+}
+
+var exportFmt = "text";
+function currentExportBody(){
+  return exportFmt==="json" ? JSON.stringify(buildExport(), null, 2) : buildText(G);
+}
+function applyExportFmt(){
+  var body = currentExportBody();
+  $("export-box").value = body;
+  $("export-charcount").textContent = body.length.toLocaleString() + " 文字"
+    + (exportFmt==="text" ? " ・ LINEにそのまま貼れます" : " ・ 長め。ファイル添付がおすすめ");
+  document.querySelectorAll(".fmt-btn").forEach(function(b){ b.classList.toggle("active", b.dataset.fmt===exportFmt); });
+}
 function renderExport(){
   var data = buildExport();
   var selfTotal = data.linescore.self.reduce(function(a,b){ return a+(b||0); },0);
@@ -1128,7 +1231,7 @@ function renderExport(){
     "<b>"+esc(data.game.date)+"　vs "+esc(data.game.opponent||"")+"</b><br>"
     + "スコア: 自 "+selfTotal+" − "+oppTotal+" 相手 ("+res+")<br>"
     + "打席記録: "+data.atBats.length+"件 ・ 守備記録: "+data.defense.length+"件 ・ 記録者: "+esc(data.game.recordedBy);
-  $("export-box").value = JSON.stringify(data, null, 2);
+  applyExportFmt();
 }
 
 /* ============ イベント束ね ============ */
@@ -1226,23 +1329,27 @@ function bindSheet(){
   // 書き出し
   $("footer-finish").addEventListener("click", function(){ renderExport(); show("export"); });
   $("back-to-sheet-btn").addEventListener("click", function(){ show("sheet"); });
+  document.querySelectorAll(".fmt-btn").forEach(function(b){
+    b.addEventListener("click", function(){ exportFmt = b.dataset.fmt; applyExportFmt(); });
+  });
   $("copy-btn").addEventListener("click", function(){
     var ta=$("export-box"); ta.select();
     navigator.clipboard.writeText(ta.value).then(function(){ toast("コピーしました"); },
       function(){ document.execCommand("copy"); toast("コピーしました"); });
   });
   $("share-btn").addEventListener("click", function(){
-    var d = buildExport();
-    var text = "Peccino 試合記録 " + d.game.date + " vs " + d.game.opponent + "\n\n" + JSON.stringify(d);
+    var text = $("export-box").value;
     if(navigator.share){ navigator.share({ title:"Peccino 試合記録", text:text }).catch(function(){}); }
     else { $("copy-btn").click(); }
   });
   $("download-btn").addEventListener("click", function(){
     var d = buildExport();
-    var blob = new Blob([JSON.stringify(d,null,2)], {type:"application/json"});
+    var isJson = exportFmt==="json";
+    var body = isJson ? JSON.stringify(d,null,2) : buildText(G);
+    var blob = new Blob([body], {type: isJson ? "application/json" : "text/plain;charset=utf-8"});
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = "peccino_" + (d.game.date||"game") + "_vs_" + (d.game.opponent||"") + ".json";
+    a.download = "peccino_" + (d.game.date||"game") + "_vs_" + (d.game.opponent||"") + (isJson ? ".json" : ".txt");
     a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   });
