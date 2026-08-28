@@ -151,6 +151,13 @@
   .sub-log-item:last-child { border-bottom:none; }
   .sub-log-item b { color:var(--ink); }
 
+  .archive-row { display:flex; align-items:center; gap:8px; padding:9px 11px; border-bottom:1px solid var(--line); }
+  .archive-row:last-child { border-bottom:none; }
+  .archive-row .ainfo { flex:1; min-width:0; font-size:12px; }
+  .archive-row .ainfo .ameta { display:block; font-size:10px; color:var(--ink-faint); margin-top:2px; }
+  .archive-row .acopy { background:var(--surface-2); border:1px solid var(--line); color:var(--accent); font-weight:700; font-size:11px; padding:6px 10px; border-radius:999px; flex-shrink:0; }
+  .archive-row .adel { background:none; border:none; color:var(--ink-faint); font-size:11px; font-weight:700; padding:6px 4px; flex-shrink:0; }
+
   .footer-bar {
     position:sticky; bottom:0; padding:10px 14px calc(10px + env(safe-area-inset-bottom));
     background:color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter:blur(10px);
@@ -209,6 +216,13 @@
 
     <!-- 1. 試合設定 -->
     <section class="screen" id="screen-setup">
+      <div id="inapp-warn" style="display:none; font-size:12px; line-height:1.6; color:var(--accent-ink); background:var(--amber); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:12px; font-weight:700">
+        ⚠️ これはLINEなどアプリ内のブラウザです。この状態だと入力内容が消えることがあります。<br>
+        右上の「⋯」メニューから <b>「Safariで開く」「ブラウザで開く」</b> を選んでから入力してください。
+      </div>
+      <div class="note" id="a2hs-hint" style="display:none">
+        📱 iPhoneなら Safari下の共有ボタン → <b>「ホーム画面に追加」</b> をしておくと、入力データがより確実に残ります。
+      </div>
       <div class="note" id="resume-note" style="display:none">
         入力中の試合があります。<button class="link-btn" id="resume-btn" style="color:var(--accent);background:none;border:none;font-weight:700;font-size:11px">続きから入力する →</button>
       </div>
@@ -238,7 +252,11 @@
       <div class="note" style="margin-top:10px">相手チームの選手個別登録は不要です。相手の打席は「結果」＋「自チームの誰が処理したか」だけ記録します。</div>
 
       <button class="primary-btn" id="start-btn">この内容で試合を開始 →</button>
-      <button class="danger-btn" id="discard-btn" style="display:none">入力中の試合を破棄して最初から</button>
+
+      <h2 class="sec" id="archive-head" style="display:none">保存済みの試合(削除するまで残ります)</h2>
+      <div class="card" id="archive-list" style="display:none"></div>
+
+      <button class="danger-btn" id="discard-btn" style="display:none">入力中の試合を削除して最初から</button>
     </section>
 
     <!-- 2. スコアシート -->
@@ -429,6 +447,9 @@
 var PW_HASH = "f53d0091606bccc1e3de749cb90c880cf4a5822872b12446853dab526aa11a42"; // sha256("peccino2026")
 var AUTH_KEY = "peccino_input_auth_v1";
 var GAME_KEY = "peccino_input_game_v1";
+var PREV_KEY = "peccino_input_game_v1_prev";   // 1つ前の状態(取り違え・破損時のフォールバック)
+var ARCHIVE_KEY = "peccino_input_archive_v1";   // 書き出し済みの過去試合(明示削除するまで残す)
+var ARCHIVE_MAX = 8;
 
 // 選手名鑑(2026-08-28 dataset.jsonより。スタッフは記録者候補にのみ使用)
 var ROSTER = [
@@ -479,8 +500,52 @@ function blankGame(){
     started: false
   };
 }
-function save(){ try{ localStorage.setItem(GAME_KEY, JSON.stringify(G)); }catch(e){} }
-function load(){ try{ var s=localStorage.getItem(GAME_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function save(){
+  try{
+    var cur = localStorage.getItem(GAME_KEY);
+    if(cur) localStorage.setItem(PREV_KEY, cur);   // 上書き前の状態を1世代だけ退避
+    localStorage.setItem(GAME_KEY, JSON.stringify(G));
+  }catch(e){}
+}
+function load(){
+  try{
+    var s = localStorage.getItem(GAME_KEY);
+    if(s) return JSON.parse(s);
+  }catch(e){}
+  try{
+    var p = localStorage.getItem(PREV_KEY);   // 本体が壊れていたら1つ前から復旧
+    if(p) return JSON.parse(p);
+  }catch(e){}
+  return null;
+}
+function getArchive(){
+  try{ var a = JSON.parse(localStorage.getItem(ARCHIVE_KEY)||"[]"); return Array.isArray(a)?a:[]; }catch(e){ return []; }
+}
+function setArchive(a){ try{ localStorage.setItem(ARCHIVE_KEY, JSON.stringify(a.slice(0,ARCHIVE_MAX))); }catch(e){} }
+function archiveCurrentGame(){
+  if(!G || (!G.atBats.length && !G.defense.length)) return;
+  var a = getArchive();
+  a.unshift({ id: G.createdAt || Date.now(), savedAt: Date.now(), data: G });
+  // 同一試合(createdAt)が二重に入らないよう間引く
+  var seen = {};
+  a = a.filter(function(x){ if(seen[x.id]) return false; seen[x.id]=1; return true; });
+  setArchive(a);
+}
+function deleteArchived(id){
+  setArchive(getArchive().filter(function(x){ return String(x.id)!==String(id); }));
+}
+// 画面を閉じる・バックグラウンドに回る直前にも保存(保険)
+function bindPersistenceGuards(){
+  function flush(){ if(G) save(); }
+  window.addEventListener("pagehide", flush);
+  window.addEventListener("beforeunload", flush);
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") flush(); });
+}
+// LINE等アプリ内ブラウザの検知(localStorageが保持されないことがある)
+function isInAppBrowser(){
+  var ua = navigator.userAgent || "";
+  return /Line\//i.test(ua) || /Instagram/i.test(ua) || /FBAN|FBAV/i.test(ua) || /Twitter/i.test(ua);
+}
 
 /* ============ ユーティリティ ============ */
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
@@ -565,6 +630,44 @@ function renderSetup(){
   var hasProgress = saved && (saved.atBats.length || saved.defense.length || saved.started);
   $("resume-note").style.display = (saved && saved.started) ? "block" : "none";
   $("discard-btn").style.display = hasProgress ? "block" : "none";
+
+  $("inapp-warn").style.display = isInAppBrowser() ? "block" : "none";
+  var standalone = window.navigator.standalone || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+  $("a2hs-hint").style.display = (!isInAppBrowser() && !standalone && /iPhone|iPad|iPod/i.test(navigator.userAgent)) ? "block" : "none";
+
+  renderArchiveList();
+}
+function renderArchiveList(){
+  var a = getArchive();
+  $("archive-head").style.display = a.length ? "flex" : "none";
+  $("archive-list").style.display = a.length ? "block" : "none";
+  if(!a.length){ $("archive-list").innerHTML = ""; return; }
+  $("archive-list").innerHTML = a.map(function(item){
+    var g = item.data;
+    var abN = (g.atBats||[]).length;
+    return '<div class="archive-row">'
+      + '<div class="ainfo"><b>'+esc(g.info.date||"")+'</b> vs '+esc(g.info.opponent||"(相手未設定)")
+        + '<span class="ameta">打席'+abN+'件 ・ 記録:'+esc(g.info.recorder||"")+'</span></div>'
+      + '<button class="acopy" data-aid="'+item.id+'">コピー</button>'
+      + '<button class="adel" data-aid="'+item.id+'">削除</button>'
+      + '</div>';
+  }).join("");
+  $("archive-list").querySelectorAll(".acopy").forEach(function(b){
+    b.addEventListener("click", function(){
+      var item = getArchive().find(function(x){ return String(x.id)===b.dataset.aid; });
+      if(!item) return;
+      var json = JSON.stringify(exportFor(item.data), null, 2);
+      navigator.clipboard.writeText(json).then(function(){ toast("コピーしました"); }, function(){ toast("コピーできませんでした"); });
+    });
+  });
+  $("archive-list").querySelectorAll(".adel").forEach(function(b){
+    b.addEventListener("click", function(){
+      if(!confirm("この試合の記録を削除します。元に戻せません。よろしいですか?")) return;
+      deleteArchived(b.dataset.aid);
+      renderArchiveList();
+      toast("削除しました");
+    });
+  });
 }
 function renderLineupCard(){
   var wrap = $("lineup-card");
@@ -618,11 +721,11 @@ function bindSetup(){
   });
   $("resume-btn").addEventListener("click", function(){ G=load(); renderSheet(); show("sheet"); });
   $("discard-btn").addEventListener("click", function(){
-    if(!confirm("入力中の試合を破棄して最初からやり直します。よろしいですか?")) return;
-    localStorage.removeItem(GAME_KEY);
+    if(!confirm("入力中の試合を削除して最初からやり直します。\nこの操作は元に戻せません。よろしいですか?")) return;
+    try{ localStorage.removeItem(GAME_KEY); localStorage.removeItem(PREV_KEY); }catch(e){}
     G = blankGame();
     renderSetup();
-    toast("破棄しました");
+    toast("削除しました");
   });
 }
 
@@ -987,30 +1090,35 @@ function saveSub(){
 }
 
 /* ============ 書き出し ============ */
-function buildExport(){
-  var atBats = G.atBats.slice().sort(function(a,b){ return a.order-b.order || (a.seq||0)-(b.seq||0); }).map(function(ab){
+function exportFor(g){
+  var atBats = (g.atBats||[]).slice().sort(function(a,b){ return a.order-b.order || (a.seq||0)-(b.seq||0); }).map(function(ab){
     return { order:ab.order, batter:ab.batter, inning:ab.inning, pa:(ab.seq||0)+1,
       result:ab.result, position:ab.pos, ballType:ab.ballType, notation:notation(ab) };
   });
-  var defense = G.defense.map(function(p,i){
+  var defense = (g.defense||[]).map(function(p,i){
     return { seq:i+1, inning:p.inning, result:p.result, fielder:p.fielder, ballType:p.ballType, runsAllowed:p.runsAllowed||0 };
   });
+  var maxI = (g.state && g.state.inning) || 1;
+  Object.keys(g.linescore.self||{}).concat(Object.keys(g.linescore.opp||{})).forEach(function(k){ if(+k>maxI) maxI=+k; });
+  if(maxI < 7) maxI = 7;
   function lsArr(side){
-    var arr=[]; for(var i=1;i<=innMax();i++) arr.push(G.linescore[side][i]!==undefined?G.linescore[side][i]:null);
+    var arr=[], src=g.linescore[side]||{};
+    for(var i=1;i<=maxI;i++) arr.push(src[i]!==undefined?src[i]:null);
     return arr;
   }
   return {
     app:"peccino-score-input", version:1, exportedAt:new Date().toISOString(),
-    game:{ date:G.info.date, opponent:G.info.opponent, place:G.info.place,
-      firstAttack:!!G.info.firstAttack, recordedBy:G.info.recorder },
-    lineup:G.lineup.map(function(r){ return { order:r.order, name:r.name, position:r.position }; }),
+    game:{ date:g.info.date, opponent:g.info.opponent, place:g.info.place,
+      firstAttack:!!g.info.firstAttack, recordedBy:g.info.recorder },
+    lineup:(g.lineup||[]).map(function(r){ return { order:r.order, name:r.name, position:r.position }; }),
     atBats:atBats, defense:defense,
-    playerTally:G.tally,
+    playerTally:g.tally||{},
     linescore:{ self:lsArr("self"), opp:lsArr("opp") },
-    substitutions:G.subs,
-    finalState:{ inning:G.state.inning }
+    substitutions:g.subs||[],
+    finalState:{ inning:(g.state&&g.state.inning)||1 }
   };
 }
+function buildExport(){ return exportFor(G); }
 function renderExport(){
   var data = buildExport();
   var selfTotal = data.linescore.self.reduce(function(a,b){ return a+(b||0); },0);
@@ -1139,12 +1247,13 @@ function bindSheet(){
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   });
   $("new-game-btn").addEventListener("click", function(){
-    if(!confirm("この試合の入力を完了して、新しい試合を始めます。データを書き出したか確認してください。よろしいですか?")) return;
-    localStorage.removeItem(GAME_KEY);
+    if(!confirm("この試合を「保存済み」に片付けて、新しい試合を始めます。\n(この試合の記録は設定画面の一覧に残り、あとからコピーや削除ができます)")) return;
+    archiveCurrentGame();
+    try{ localStorage.removeItem(GAME_KEY); localStorage.removeItem(PREV_KEY); }catch(e){}
     G = blankGame();
     renderSetup();
     show("setup");
-    toast("新しい試合の設定へ");
+    toast("保存済みに片付けました");
   });
 }
 
@@ -1159,6 +1268,7 @@ function bindSheet(){
 
   bindSetup();
   bindSheet();
+  bindPersistenceGuards();
   initGate();
 })();
 </script>
