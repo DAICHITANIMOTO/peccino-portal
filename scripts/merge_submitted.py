@@ -299,3 +299,59 @@ def pitching_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
         row["innings"] = round(outs[name] / 3, 4)
 
     return list(rows.values())
+
+
+def merge(base: dict, submissions: list[dict]) -> dict:
+    import copy as _copy
+    out = _copy.deepcopy(base)
+    roster = roster_index(out)
+
+    sub_ids = {game_id_for(s) for s in submissions}
+    # 既存の同 game_id(sub_) 分を全部除去してから入れ直す = 冪等
+    out["games"] = [g for g in out["games"] if g["game_id"] not in sub_ids]
+    out["batting_logs"] = [b for b in out["batting_logs"] if b["game_id"] not in sub_ids]
+    out["pitching_logs"] = [p for p in out["pitching_logs"] if p["game_id"] not in sub_ids]
+
+    for s in submissions:
+        out["games"].append(game_entry_from_submission(s))
+        out["batting_logs"].extend(batting_logs_from_submission(s, roster))
+        out["pitching_logs"].extend(pitching_logs_from_submission(s, roster))
+
+    out["games"].sort(key=lambda g: (g.get("date_sort", ""), g["game_id"]))
+    return out
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description="submitted-games を dataset にマージ")
+    ap.add_argument("--base", required=True)
+    ap.add_argument("--submitted", required=True)
+    ap.add_argument("--out", required=True)
+    args = ap.parse_args(argv)
+
+    base = json.loads(Path(args.base).read_text(encoding="utf-8"))
+    base_game_count = len(base["games"])
+    submissions = load_submitted(args.submitted)
+    merged = merge(base, submissions)
+
+    # 安全策: 出力を検証してから移動
+    text = json.dumps(merged, ensure_ascii=False, separators=(",", ":"))
+    reparsed = json.loads(text)  # parse できなければ例外で落ちる(= 本ファイルは無傷)
+    if len(reparsed["games"]) < base_game_count:
+        print("[abort] マージ結果の games がベースより減っている。中断します。", file=sys.stderr)
+        return 1
+    for key in ("games", "batting_logs", "pitching_logs", "players"):
+        if not isinstance(reparsed.get(key), list):
+            print(f"[abort] {key} が list でない。中断します。", file=sys.stderr)
+            return 1
+
+    out_path = Path(args.out)
+    tmp = out_path.with_suffix(out_path.suffix + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(out_path)
+    print(f"[ok] {len(submissions)} 試合をマージ → {out_path} "
+          f"(games {base_game_count} → {len(reparsed['games'])})")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

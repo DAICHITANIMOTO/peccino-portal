@@ -167,3 +167,66 @@ def test_pitching_logs_no_pitcher(capsys):
     logs = ms.pitching_logs_from_submission(sub, {})
     assert logs == []
     assert "投手" in capsys.readouterr().err
+
+
+def test_merge_adds_one_game():
+    base = load_fixture("dataset_base_min.json")
+    sub = load_fixture("game_normal.json")
+    merged = ms.merge(base, [sub])
+    assert len(merged["games"]) == 2
+    ids = {g["game_id"] for g in merged["games"]}
+    assert "sub_2026-08-30_神戸グフ" in ids
+    assert "900001" in ids
+    # batting_logs は 既存1 + 手入力9人 = 10
+    assert len(merged["batting_logs"]) == 1 + 9
+    assert any(b["game_id"] == "sub_2026-08-30_神戸グフ" for b in merged["batting_logs"])
+    assert any(p["game_id"] == "sub_2026-08-30_神戸グフ" for p in merged["pitching_logs"])
+
+
+def test_merge_is_idempotent():
+    base = load_fixture("dataset_base_min.json")
+    sub = load_fixture("game_normal.json")
+    once = ms.merge(base, [sub])
+    twice = ms.merge(once, [sub])
+    assert once == twice
+
+
+def test_merge_replaces_same_id():
+    base = load_fixture("dataset_base_min.json")
+    sub = load_fixture("game_normal.json")
+    merged1 = ms.merge(base, [sub])
+    sub2 = load_fixture("game_normal.json")
+    sub2["linescore"]["self"] = [9, 0, 0, None, None, None, None]  # スコア修正
+    merged2 = ms.merge(merged1, [sub2])
+    g = next(x for x in merged2["games"] if x["game_id"] == "sub_2026-08-30_神戸グフ")
+    assert g["score_for"] == 9
+    assert len([x for x in merged2["games"] if x["game_id"] == "sub_2026-08-30_神戸グフ"]) == 1
+
+
+def test_main_writes_valid_output(tmp_path):
+    base_path = FIXTURES / "dataset_base_min.json"
+    sub_dir = tmp_path / "submitted"
+    sub_dir.mkdir()
+    (sub_dir / "g.json").write_text(
+        json.dumps(load_fixture("game_normal.json"), ensure_ascii=False), encoding="utf-8")
+    (sub_dir / "broken.json").write_text("{oops", encoding="utf-8")
+    out_path = tmp_path / "merged.json"
+
+    rc = ms.main(["--base", str(base_path), "--submitted", str(sub_dir), "--out", str(out_path)])
+    assert rc == 0
+    data = json.loads(out_path.read_text(encoding="utf-8"))
+    assert len(data["games"]) == 2                      # 壊れたファイルは無視
+    assert out_path.read_text(encoding="utf-8").count("\n") == 0  # コンパクト1行
+
+
+def test_main_never_shrinks_games(tmp_path):
+    """不正データだらけでも既存 games を減らさない"""
+    base_path = FIXTURES / "dataset_base_min.json"
+    sub_dir = tmp_path / "submitted"
+    sub_dir.mkdir()
+    (sub_dir / "a.json").write_text("not json", encoding="utf-8")
+    out_path = tmp_path / "merged.json"
+    rc = ms.main(["--base", str(base_path), "--submitted", str(sub_dir), "--out", str(out_path)])
+    assert rc == 0
+    data = json.loads(out_path.read_text(encoding="utf-8"))
+    assert len(data["games"]) == 1

@@ -1,0 +1,22 @@
+{
+  "players": [
+    {"number": "1", "name": "谷本大知"}, {"number": "7", "name": "福田龍之介"},
+    {"number": "19", "name": "中村駿"}, {"number": "2", "name": "藤堂真雄"},
+    {"number": "3", "name": "半井大稀"}, {"number": "4", "name": "遠部巧大"},
+    {"number": "5", "name": "榊原健斗"}, {"number": "6", "name": "Yuito"},
+    {"number": "9", "name": "薮中竜也"}
+  ],
+  "games": [
+    {"game_id": "900001", "date": "2026/7/1 (水)", "date_sort": "2026-07-01",
+     "category": "練習試合", "opponent": "既存チーム", "place": "", "result": "勝ち",
+     "score_for": 5, "score_against": 2}
+  ],
+  "batting_logs": [
+    {"game_id": "900001", "number": "1", "name": "谷本大知", "is_roster_member": true,
+     "started": "先発", "order": 1, "position": "三", "pa": 3, "ab": 3, "h": 1, "hr": 0,
+     "rbi": 0, "r": 1, "sb": 0, "double": 0, "triple": 0, "risp_ab": 0, "risp_h": 0,
+     "so": 1, "bb": 0, "hbp": 0, "sac": 0, "sf": 0, "gdp": 0, "error_reach": 0, "e": 0,
+     "cs": 0, "cs_catcher": 0}
+  ],
+  "pitching_logs": []
+}
