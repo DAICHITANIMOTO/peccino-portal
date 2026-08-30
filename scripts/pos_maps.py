@@ -1,4 +1,5 @@
 """守備位置・打球結果のマッピング定数。merge_submitted.py が使う。"""
+from __future__ import annotations
 
 # lineup の position(フル) -> batting_logs の position(短縮)。teams.one 由来データに合わせる
 POS_FULL_TO_SHORT = {

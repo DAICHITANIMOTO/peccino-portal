@@ -62,6 +62,25 @@ def test_load_submitted_skips_invalid(tmp_path):
     assert result[0]["game"]["opponent"] == "神戸グフ"
 
 
+def test_load_submitted_skips_type_malformed(tmp_path):
+    good = load_fixture("game_normal.json")
+    (tmp_path / "good.json").write_text(json.dumps(good, ensure_ascii=False), encoding="utf-8")
+
+    bad_atbats = copy.deepcopy(good)
+    bad_atbats["atBats"] = None
+    (tmp_path / "bad_atbats.json").write_text(
+        json.dumps(bad_atbats, ensure_ascii=False), encoding="utf-8")
+
+    bad_linescore = copy.deepcopy(good)
+    bad_linescore["linescore"] = None
+    (tmp_path / "bad_linescore.json").write_text(
+        json.dumps(bad_linescore, ensure_ascii=False), encoding="utf-8")
+
+    result = ms.load_submitted(str(tmp_path))
+    assert len(result) == 1
+    assert result[0]["game"]["opponent"] == "神戸グフ"
+
+
 def test_game_id_for():
     assert ms.game_id_for(load_fixture("game_normal.json")) == "sub_2026-08-30_神戸グフ"
 
