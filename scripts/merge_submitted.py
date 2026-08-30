@@ -108,3 +108,98 @@ def game_entry_from_submission(sub: dict) -> dict:
         "score_for": sf,
         "score_against": sa,
     }
+
+
+BATTING_ZERO_FIELDS = (
+    "pa", "ab", "h", "hr", "rbi", "r", "sb", "double", "triple",
+    "risp_ab", "risp_h", "so", "bb", "hbp", "sac", "sf", "gdp",
+    "error_reach", "e", "cs", "cs_catcher",
+)
+
+
+def roster_index(base_dataset: dict) -> dict:
+    return {p["name"]: str(p.get("number", "")) for p in base_dataset.get("players", [])}
+
+
+def _blank_batting(game_id: str, name: str, roster: dict) -> dict:
+    row = {
+        "game_id": game_id,
+        "number": roster.get(name, ""),
+        "name": name,
+        "is_roster_member": name in roster,
+        "started": "先発",
+        "order": 0,
+        "position": "",
+    }
+    for f in BATTING_ZERO_FIELDS:
+        row[f] = 0
+    return row
+
+
+def batting_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
+    game_id = game_id_for(sub)
+    tally = sub.get("playerTally", {})
+
+    # order -> (name, position短縮) を lineup から。同 order で name が複数(交代)なら
+    # atBats の batter を優先し、行を分ける
+    lineup_by_order = {r["order"]: r for r in sub["lineup"]}
+    subbed_in = {s.get("order") for s in sub.get("substitutions", []) if s.get("type") == "bat"}
+
+    rows: dict[str, dict] = {}
+
+    def ensure(name: str, order: int, position: str, started: str) -> dict:
+        if name not in rows:
+            r = _blank_batting(game_id, name, roster)
+            r["order"] = order
+            r["position"] = position
+            r["started"] = started
+            rows[name] = r
+        return rows[name]
+
+    # まず lineup の全員を pa=0 で用意
+    for lr in sub["lineup"]:
+        short = POS_FULL_TO_SHORT.get(lr.get("position", ""), "")
+        ensure(lr["name"], lr["order"], short, "先発")
+
+    # atBats を打者ごとに集計
+    for ab in sub["atBats"]:
+        name = ab.get("batter") or lineup_by_order.get(ab["order"], {}).get("name", "")
+        if not name:
+            continue
+        started = "途中" if ab["order"] in subbed_in and name not in {l["name"] for l in sub["lineup"]} else "先発"
+        lr = lineup_by_order.get(ab["order"], {})
+        short = POS_FULL_TO_SHORT.get(lr.get("position", ""), "")
+        row = ensure(name, ab["order"], short, started)
+        res = ab["result"]
+        row["pa"] += 1
+        if res not in ("四球", "死球", "犠打", "犠飛"):
+            row["ab"] += 1
+        if res in HIT_RESULTS:
+            row["h"] += 1
+        if res == "二塁打":
+            row["double"] += 1
+        elif res == "三塁打":
+            row["triple"] += 1
+        elif res == "本塁打":
+            row["hr"] += 1
+        elif res == "四球":
+            row["bb"] += 1
+        elif res == "死球":
+            row["hbp"] += 1
+        elif res == "三振":
+            row["so"] += 1
+        elif res == "犠打":
+            row["sac"] += 1
+        elif res == "犠飛":
+            row["sf"] += 1
+        elif res == "失策出塁":
+            row["error_reach"] += 1
+
+    # タリー(打点/得点/失策)を反映
+    for name, t in tally.items():
+        row = rows.get(name) or ensure(name, 0, "", "途中")
+        row["rbi"] = int(t.get("rbi", 0))
+        row["r"] = int(t.get("run", 0))
+        row["e"] = int(t.get("error", 0))
+
+    return list(rows.values())

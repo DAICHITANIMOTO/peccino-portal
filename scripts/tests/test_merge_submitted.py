@@ -77,3 +77,49 @@ def test_game_entry_basic():
     assert entry["score_for"] == 3      # linescore.self 2+0+1
     assert entry["score_against"] == 1  # linescore.opp 1
     assert entry["result"] == "勝ち"
+
+
+def test_batting_logs_counts():
+    sub = load_fixture("game_normal.json")
+    roster = {"谷本大知": "1", "福田龍之介": "7", "中村駿": "19", "藤堂真雄": "2",
+              "半井大稀": "3", "遠部巧大": "4", "榊原健斗": "5", "Yuito": "6", "薮中竜也": "9"}
+    logs = ms.batting_logs_from_submission(sub, roster)
+    by_name = {r["name"]: r for r in logs}
+
+    tan = by_name["谷本大知"]
+    assert (tan["pa"], tan["ab"], tan["h"], tan["double"], tan["hr"]) == (2, 2, 2, 1, 0)
+    assert (tan["rbi"], tan["r"]) == (1, 1)
+    assert tan["number"] == "1"
+    assert tan["is_roster_member"] is True
+    assert tan["started"] == "先発"
+    assert tan["position"] == "三"
+
+    fuk = by_name["福田龍之介"]
+    assert (fuk["pa"], fuk["ab"], fuk["h"], fuk["bb"], fuk["so"]) == (2, 1, 0, 1, 0)
+
+    nak = by_name["中村駿"]
+    assert (nak["pa"], nak["ab"], nak["h"], nak["so"]) == (1, 1, 0, 1)
+
+    tod = by_name["藤堂真雄"]
+    assert (tod["pa"], tod["ab"], tod["h"], tod["hr"], tod["rbi"], tod["r"]) == (1, 1, 1, 1, 1, 1)
+
+    han = by_name["半井大稀"]
+    assert (han["pa"], han["ab"], han["sac"], han["h"]) == (1, 0, 1, 0)
+
+    ono = by_name["遠部巧大"]
+    assert (ono["pa"], ono["ab"], ono["h"], ono["error_reach"]) == (1, 1, 0, 1)
+
+    # 打席が無かった先発(榊原/Yuito/薮中)も pa=0 の行が出る
+    assert by_name["榊原健斗"]["pa"] == 0
+
+
+def test_batting_logs_guest_player():
+    sub = load_fixture("game_normal.json")
+    sub["lineup"].append({"order": 10, "name": "助っ人太郎", "position": "控え"})
+    sub["atBats"].append({"order": 10, "batter": "助っ人太郎", "inning": 2, "pa": 1,
+                          "result": "単打", "position": 9, "ballType": "ゴロ", "notation": "9安ゴ"})
+    roster = {"谷本大知": "1"}
+    logs = ms.batting_logs_from_submission(sub, roster)
+    guest = next(r for r in logs if r["name"] == "助っ人太郎")
+    assert guest["is_roster_member"] is False
+    assert guest["number"] == ""
