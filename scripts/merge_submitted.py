@@ -203,3 +203,99 @@ def batting_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
         row["e"] = int(t.get("error", 0))
 
     return list(rows.values())
+
+
+PITCHING_ZERO_FIELDS = ("pitches", "r", "er", "h", "hr", "so", "bb", "hbp", "bk", "wp")
+
+
+def _starting_pitcher(sub: dict) -> str:
+    for lr in sub["lineup"]:
+        if lr.get("position") in ("投手", "投"):
+            return lr["name"]
+    return ""
+
+
+def pitcher_by_inning(sub: dict) -> dict:
+    """各イニング(自チーム守備)の投手名。交代は substitutions の
+    'type=def' かつ「新しい守備位置が投手」のものから拾う。"""
+    max_inning = max((d["inning"] for d in sub["defense"]), default=0)
+    fs_inning = (sub.get("finalState") or {}).get("inning")
+    if isinstance(fs_inning, int):
+        max_inning = max(max_inning, fs_inning)
+    cur = _starting_pitcher(sub)
+    result: dict[int, str] = {}
+    # from の回数をパース: '3回表' / '3回' -> 3
+    changes = []
+    for s in sub.get("substitutions", []):
+        if s.get("type") != "def":
+            continue
+        detail = s.get("detail", "")
+        # detail 形式: "<名前> 守備 <旧位置> → <新位置>"。新位置が投手のときだけ投手交代
+        if detail.rsplit("→", 1)[-1].strip() != "投手":
+            continue
+        frm = s.get("from", "")
+        digits = "".join(ch for ch in frm if ch.isdigit())
+        if not digits:
+            continue
+        new_name = detail.split("守備")[0].strip()
+        changes.append((int(digits), new_name))
+    changes.sort()
+    ci = 0
+    for inn in range(1, max_inning + 1):
+        while ci < len(changes) and changes[ci][0] <= inn:
+            cur = changes[ci][1]
+            ci += 1
+        result[inn] = cur
+    return result
+
+
+def _blank_pitching(game_id: str, name: str, roster: dict, order: int) -> dict:
+    row = {
+        "game_id": game_id, "number": roster.get(name, ""), "name": name,
+        "is_roster_member": name in roster, "decision": "-",
+        "innings": 0.0, "complete_game": False, "shutout": False, "order": order,
+    }
+    for f in PITCHING_ZERO_FIELDS:
+        row[f] = 0
+    return row
+
+
+def pitching_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
+    game_id = game_id_for(sub)
+    pbi = pitcher_by_inning(sub)
+    if not any(pbi.values()):
+        print(f"[warn] {game_id}: 投手が特定できないため pitching_logs を出力しません", file=sys.stderr)
+        return []
+
+    rows: dict[str, dict] = {}
+    order_seq: list[str] = []
+    outs: dict[str, int] = {}
+
+    for dp in sub["defense"]:
+        pitcher = pbi.get(dp["inning"], "")
+        if not pitcher:
+            continue
+        if pitcher not in rows:
+            order_seq.append(pitcher)
+            rows[pitcher] = _blank_pitching(game_id, pitcher, roster, len(order_seq))
+            outs[pitcher] = 0
+        row = rows[pitcher]
+        res = dp["result"]
+        if res in ("アウト", "三振"):
+            outs[pitcher] += 1
+        if res == "三振":
+            row["so"] += 1
+        elif res == "安打":
+            row["h"] += 1
+        elif res == "四球":
+            row["bb"] += 1
+        elif res == "死球":
+            row["hbp"] += 1
+        runs = int(dp.get("runsAllowed", 0) or 0)
+        row["r"] += runs
+        row["er"] += runs  # 自責/非自責は入力アプリに無いので同値
+
+    for name, row in rows.items():
+        row["innings"] = round(outs[name] / 3, 4)
+
+    return list(rows.values())

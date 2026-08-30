@@ -123,3 +123,47 @@ def test_batting_logs_guest_player():
     guest = next(r for r in logs if r["name"] == "助っ人太郎")
     assert guest["is_roster_member"] is False
     assert guest["number"] == ""
+
+
+def test_pitcher_by_inning_no_change():
+    sub = load_fixture("game_normal.json")
+    assert ms.pitcher_by_inning(sub) == {1: "中村駿", 2: "中村駿", 3: "中村駿"}
+
+
+def test_pitching_logs_single_pitcher():
+    sub = load_fixture("game_normal.json")
+    roster = {"中村駿": "19"}
+    logs = ms.pitching_logs_from_submission(sub, roster)
+    assert len(logs) == 1
+    p = logs[0]
+    assert p["name"] == "中村駿"
+    assert p["number"] == "19"
+    # defense: 1回=アウト,三振,安打(1) 2回=アウト,四球,アウト  → アウト4つ
+    assert p["innings"] == round(4 / 3, 4)
+    assert p["h"] == 1
+    assert p["so"] == 1
+    assert p["bb"] == 1
+    assert p["r"] == 1 and p["er"] == 1
+    assert p["decision"] == "-"
+
+
+def test_pitching_logs_with_change():
+    sub = load_fixture("game_pitcher_change.json")
+    roster = {"中村駿": "19", "半井大稀": "3"}
+    logs = ms.pitching_logs_from_submission(sub, roster)
+    by_name = {p["name"]: p for p in logs}
+    assert set(by_name) == {"中村駿", "半井大稀"}
+    # 中村: 1-2回 アウト4つ, 半井: 3回 三振1+安打(2失点) アウト1つ
+    assert by_name["中村駿"]["innings"] == round(4 / 3, 4)
+    assert by_name["半井大稀"]["innings"] == round(1 / 3, 4)
+    assert by_name["半井大稀"]["r"] == 2
+    assert by_name["半井大稀"]["h"] == 1
+
+
+def test_pitching_logs_no_pitcher(capsys):
+    sub = load_fixture("game_normal.json")
+    sub["lineup"] = [r for r in sub["lineup"] if r["position"] != "投手"]
+    sub["substitutions"] = []
+    logs = ms.pitching_logs_from_submission(sub, {})
+    assert logs == []
+    assert "投手" in capsys.readouterr().err
