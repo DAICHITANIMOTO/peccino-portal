@@ -18,7 +18,11 @@ def embed(dataset_path: Path, html_path: Path) -> None:
     dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
     compact = json.dumps(dataset, ensure_ascii=False, separators=(",", ":"))
     html = html_path.read_text(encoding="utf-8")
+    if START_TAG not in html:
+        raise ValueError(f"{html_path}: 埋め込みタグ {START_TAG!r} が見つかりません")
     start = html.index(START_TAG) + len(START_TAG)
+    if END_TAG not in html[start:]:
+        raise ValueError(f"{html_path}: {START_TAG!r} の後に {END_TAG!r} が見つかりません")
     end = html.index(END_TAG, start)
     html_path.write_text(html[:start] + compact + html[end:], encoding="utf-8")
     print(f"[ok] {dataset_path.name} ({len(compact):,} 文字) を {html_path.name} に埋め込み")

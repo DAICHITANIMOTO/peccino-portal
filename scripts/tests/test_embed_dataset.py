@@ -2,6 +2,8 @@ from __future__ import annotations
 import json, sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import embed_dataset as ed
 
@@ -32,3 +34,12 @@ def test_embed_output_is_compact(tmp_path):
     ed.main(["--dataset", str(ds), "--html", str(html)])
     body = html.read_text(encoding="utf-8")
     assert '{"a":1,"b":[1,2]}' in body   # スペース無し
+
+
+def test_embed_raises_if_start_tag_missing(tmp_path):
+    html = tmp_path / "index.html"
+    html.write_text("<html><body>no dataset block here</body></html>", encoding="utf-8")
+    ds = tmp_path / "dataset.json"
+    ds.write_text('{"a":1}', encoding="utf-8")
+    with pytest.raises(ValueError):
+        ed.main(["--dataset", str(ds), "--html", str(html)])
