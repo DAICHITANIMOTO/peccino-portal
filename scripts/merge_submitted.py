@@ -64,3 +64,47 @@ def load_submitted(dirpath: str) -> list[dict]:
             continue
         out.append(obj)
     return out
+
+
+_WD = ["月", "火", "水", "木", "金", "土", "日"]
+
+
+def _jp_date(iso: str) -> tuple[str, str]:
+    y, m, d = (int(x) for x in iso.split("-"))
+    wd = _WD[date(y, m, d).weekday()]
+    return f"{y}/{m}/{d} ({wd})", f"{y:04d}-{m:02d}-{d:02d}"
+
+
+def _safe_slug(opponent: str) -> str:
+    # ファイル名/ID に使えない文字だけ除去。日本語はそのまま(GitHub は UTF-8 ファイル名可)
+    bad = set('/\\:*?"<>|')
+    s = "".join(c for c in opponent if c not in bad).strip().replace(" ", "-")
+    return s or "unknown"
+
+
+def game_id_for(sub: dict) -> str:
+    g = sub["game"]
+    return f"sub_{g['date']}_{_safe_slug(g['opponent'])}"
+
+
+def _linescore_total(arr: list) -> int:
+    return sum(int(x) for x in arr if x is not None)
+
+
+def game_entry_from_submission(sub: dict) -> dict:
+    g = sub["game"]
+    disp, sort = _jp_date(g["date"])
+    sf = _linescore_total(sub["linescore"]["self"])
+    sa = _linescore_total(sub["linescore"]["opp"])
+    result = "勝ち" if sf > sa else ("負け" if sf < sa else "引分け")
+    return {
+        "game_id": game_id_for(sub),
+        "date": disp,
+        "date_sort": sort,
+        "category": "練習試合",
+        "opponent": g["opponent"],
+        "place": g.get("place", ""),
+        "result": result,
+        "score_for": sf,
+        "score_against": sa,
+    }

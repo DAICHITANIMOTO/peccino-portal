@@ -60,3 +60,20 @@ def test_load_submitted_skips_invalid(tmp_path):
     result = ms.load_submitted(str(tmp_path))
     assert len(result) == 1
     assert result[0]["game"]["opponent"] == "神戸グフ"
+
+
+def test_game_id_for():
+    assert ms.game_id_for(load_fixture("game_normal.json")) == "sub_2026-08-30_神戸グフ"
+
+
+def test_game_entry_basic():
+    entry = ms.game_entry_from_submission(load_fixture("game_normal.json"))
+    assert entry["game_id"] == "sub_2026-08-30_神戸グフ"
+    assert entry["date"] == "2026/8/30 (日)"       # 2026-08-30 は日曜
+    assert entry["date_sort"] == "2026-08-30"
+    assert entry["opponent"] == "神戸グフ"
+    assert entry["place"] == "名谷公園野球場"
+    assert entry["category"] == "練習試合"
+    assert entry["score_for"] == 3      # linescore.self 2+0+1
+    assert entry["score_against"] == 1  # linescore.opp 1
+    assert entry["result"] == "勝ち"
