@@ -1,0 +1,50 @@
+{
+  "app": "peccino-score-input",
+  "version": 1,
+  "game": {
+    "date": "2099-12-31",
+    "opponent": "接続テスト",
+    "place": "",
+    "firstAttack": true,
+    "recordedBy": "将軍"
+  },
+  "lineup": [
+    {
+      "order": 1,
+      "name": "谷本大知",
+      "position": "三塁"
+    }
+  ],
+  "atBats": [
+    {
+      "order": 1,
+      "batter": "谷本大知",
+      "inning": 1,
+      "pa": 1,
+      "result": "単打",
+      "position": 6,
+      "ballType": "ゴロ",
+      "notation": "6安ゴ"
+    }
+  ],
+  "defense": [],
+  "playerTally": {
+    "谷本大知": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0
+    }
+  },
+  "linescore": {
+    "self": [
+      1
+    ],
+    "opp": [
+      0
+    ]
+  },
+  "substitutions": [],
+  "finalState": {
+    "inning": 1
+  }
+}
