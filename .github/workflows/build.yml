@@ -1,0 +1,50 @@
+name: build site
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "submitted-games/**"
+      - "data/**"
+      - "scripts/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-site
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: run tests
+        run: |
+          pip install --quiet pytest
+          python -m pytest scripts/tests -q
+
+      - name: merge submitted games
+        run: python scripts/merge_submitted.py --base data/dataset.json --submitted submitted-games --out /tmp/merged.json
+
+      - name: embed into index.html
+        run: python scripts/embed_dataset.py --dataset /tmp/merged.json --html index.html
+
+      - name: commit if changed
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "index.html に変更なし"
+            exit 0
+          fi
+          git config user.name "peccino-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git commit -m "build: submitted-games を反映 [skip ci]"
+          git push || (git pull --rebase --autostash origin main && git push) || echo "::warning::push が競合しました。後続のビルドが最新状態を反映します。"

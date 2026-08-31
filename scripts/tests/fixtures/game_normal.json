@@ -1,0 +1,41 @@
+{
+  "app": "peccino-score-input",
+  "version": 1,
+  "game": { "date": "2026-08-30", "opponent": "神戸グフ", "place": "名谷公園野球場", "firstAttack": true, "recordedBy": "将軍" },
+  "lineup": [
+    { "order": 1, "name": "谷本大知", "position": "三塁" },
+    { "order": 2, "name": "福田龍之介", "position": "遊撃" },
+    { "order": 3, "name": "中村駿", "position": "投手" },
+    { "order": 4, "name": "藤堂真雄", "position": "中堅" },
+    { "order": 5, "name": "半井大稀", "position": "一塁" },
+    { "order": 6, "name": "遠部巧大", "position": "二塁" },
+    { "order": 7, "name": "榊原健斗", "position": "左翼" },
+    { "order": 8, "name": "Yuito", "position": "右翼" },
+    { "order": 9, "name": "薮中竜也", "position": "捕手" }
+  ],
+  "atBats": [
+    { "order": 1, "batter": "谷本大知", "inning": 1, "pa": 1, "result": "単打", "position": 6, "ballType": "ゴロ", "notation": "6安ゴ" },
+    { "order": 1, "batter": "谷本大知", "inning": 3, "pa": 2, "result": "二塁打", "position": 7, "ballType": "ライナー", "notation": "7二直" },
+    { "order": 2, "batter": "福田龍之介", "inning": 1, "pa": 1, "result": "アウト", "position": 4, "ballType": "ゴロ", "notation": "4ゴ" },
+    { "order": 2, "batter": "福田龍之介", "inning": 3, "pa": 2, "result": "四球", "position": null, "ballType": null, "notation": "四球" },
+    { "order": 3, "batter": "中村駿", "inning": 1, "pa": 1, "result": "三振", "position": null, "ballType": null, "notation": "三振" },
+    { "order": 4, "batter": "藤堂真雄", "inning": 1, "pa": 1, "result": "本塁打", "position": 8, "ballType": "フライ", "notation": "8本飛" },
+    { "order": 5, "batter": "半井大稀", "inning": 2, "pa": 1, "result": "犠打", "position": null, "ballType": null, "notation": "犠打" },
+    { "order": 6, "batter": "遠部巧大", "inning": 2, "pa": 1, "result": "失策出塁", "position": 5, "ballType": "ゴロ", "notation": "5失ゴ" }
+  ],
+  "defense": [
+    { "seq": 1, "inning": 1, "result": "アウト", "fielder": 6, "ballType": "ゴロ", "runsAllowed": 0 },
+    { "seq": 2, "inning": 1, "result": "三振", "fielder": null, "ballType": null, "runsAllowed": 0 },
+    { "seq": 3, "inning": 1, "result": "安打", "fielder": 8, "ballType": "フライ", "runsAllowed": 1 },
+    { "seq": 4, "inning": 2, "result": "アウト", "fielder": 5, "ballType": "ライナー", "runsAllowed": 0 },
+    { "seq": 5, "inning": 2, "result": "四球", "fielder": null, "ballType": null, "runsAllowed": 0 },
+    { "seq": 6, "inning": 2, "result": "アウト", "fielder": 3, "ballType": "ゴロ", "runsAllowed": 0 }
+  ],
+  "playerTally": {
+    "谷本大知": { "rbi": 1, "run": 1, "error": 0 },
+    "藤堂真雄": { "rbi": 1, "run": 1, "error": 0 }
+  },
+  "linescore": { "self": [2, 0, 1, null, null, null, null], "opp": [1, 0, 0, null, null, null, null] },
+  "substitutions": [],
+  "finalState": { "inning": 3 }
+}
