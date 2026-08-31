@@ -249,3 +249,117 @@ def test_main_never_shrinks_games(tmp_path):
     assert rc == 0
     data = json.loads(out_path.read_text(encoding="utf-8"))
     assert len(data["games"]) == 1
+
+
+# --- FIX 1: ダブルヘッダー(同日同カード2試合)の game_id 衝突 ---
+
+def test_doubleheader_distinct_ids(tmp_path):
+    g1 = load_fixture("game_normal.json")
+    g2 = load_fixture("game_normal.json")
+    g2["linescore"]["self"] = [5, 0, 0, None, None, None, None]  # 2試合目はスコアが違う
+    (tmp_path / "2026-08-30_神戸グフ_1.json").write_text(
+        json.dumps(g1, ensure_ascii=False), encoding="utf-8")
+    (tmp_path / "2026-08-30_神戸グフ_2.json").write_text(
+        json.dumps(g2, ensure_ascii=False), encoding="utf-8")
+
+    merged = ms.merge(load_fixture("dataset_base_min.json"), ms.load_submitted(str(tmp_path)))
+
+    assert len(merged["games"]) == 3
+    ids = [g["game_id"] for g in merged["games"]]
+    assert "sub_2026-08-30_神戸グフ_1" in ids
+    assert "sub_2026-08-30_神戸グフ_2" in ids  # 別 ID になっている
+
+    for gid in ("sub_2026-08-30_神戸グフ_1", "sub_2026-08-30_神戸グフ_2"):
+        tan = [b for b in merged["batting_logs"]
+               if b["game_id"] == gid and b["name"] == "谷本大知"]
+        assert len(tan) == 1          # 二重計上されていない
+        assert tan[0]["pa"] == 2
+
+
+# --- FIX 2a: JSON として妥当だが converter が参照するフィールドが壊れたファイル ---
+
+def test_validate_rejects_bad_date():
+    bad = load_fixture("game_normal.json")
+    bad["game"]["date"] = "2026/08/30"
+    with pytest.raises(ms.SubmittedGameError):
+        ms.validate_submission(bad)
+
+
+def test_validate_rejects_nonnumeric_linescore():
+    bad = load_fixture("game_normal.json")
+    bad["linescore"]["self"] = [1, "x", None, None, None, None, None]
+    with pytest.raises(ms.SubmittedGameError):
+        ms.validate_submission(bad)
+
+
+def test_validate_rejects_missing_atbat_order():
+    bad = load_fixture("game_normal.json")
+    del bad["atBats"][0]["order"]
+    with pytest.raises(ms.SubmittedGameError):
+        ms.validate_submission(bad)
+
+
+def test_load_submitted_skips_all_malformed_shapes(tmp_path):
+    good = load_fixture("game_normal.json")
+    (tmp_path / "good.json").write_text(
+        json.dumps(good, ensure_ascii=False), encoding="utf-8")
+
+    bad_date = copy.deepcopy(good)
+    bad_date["game"]["date"] = "bad"
+    (tmp_path / "bad_date.json").write_text(
+        json.dumps(bad_date, ensure_ascii=False), encoding="utf-8")
+
+    bad_linescore = copy.deepcopy(good)
+    bad_linescore["linescore"]["self"] = None
+    (tmp_path / "bad_linescore.json").write_text(
+        json.dumps(bad_linescore, ensure_ascii=False), encoding="utf-8")
+
+    bad_atbat = copy.deepcopy(good)
+    del bad_atbat["atBats"][0]["order"]
+    (tmp_path / "bad_atbat.json").write_text(
+        json.dumps(bad_atbat, ensure_ascii=False), encoding="utf-8")
+
+    bad_tally = copy.deepcopy(good)
+    bad_tally["playerTally"] = {"x": 5}
+    (tmp_path / "bad_tally.json").write_text(
+        json.dumps(bad_tally, ensure_ascii=False), encoding="utf-8")
+
+    result = ms.load_submitted(str(tmp_path))
+    assert len(result) == 1
+    assert result[0]["game"]["opponent"] == "神戸グフ"
+
+
+# --- FIX 2b: merge() が1試合の変換失敗を隔離する ---
+
+def test_merge_isolates_a_bad_submission():
+    base = load_fixture("dataset_base_min.json")
+    good = load_fixture("game_normal.json")
+
+    # validate_submission は通る(substitutions は list)が、
+    # pitcher_by_inning が detail.rsplit(...) で落ちる形
+    bad = load_fixture("game_normal.json")
+    bad["substitutions"] = [{"type": "def", "from": "3回", "detail": 12345}]
+    ms.validate_submission(bad)  # ここでは落ちないことを確認
+    bad["_stem"] = "2026-08-30_神戸グフ_bad"  # good とは別 game_id にして隔離経路を通す
+
+    merged = ms.merge(base, [good, bad])
+    assert len(merged["games"]) == 2  # base 1 + good 1、bad は隔離された
+    ids = {g["game_id"] for g in merged["games"]}
+    assert "sub_2026-08-30_神戸グフ" in ids
+
+
+# --- FIX 6: 生成行のキー集合が本番 dataset.json と一致する ---
+
+def test_generated_rows_match_dataset_schema():
+    d = json.loads(
+        (Path(__file__).resolve().parents[2] / "data" / "dataset.json").read_text(encoding="utf-8"))
+    ref_bat = d["batting_logs"][0]
+    ref_pit = d["pitching_logs"][0]
+
+    roster = ms.roster_index(d)
+    sub = load_fixture("game_normal.json")
+    gen_bat = ms.batting_logs_from_submission(sub, roster)
+    gen_pit = ms.pitching_logs_from_submission(sub, roster)
+
+    assert set(gen_bat[0]) == set(ref_bat)
+    assert set(gen_pit[0]) == set(ref_pit)

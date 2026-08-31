@@ -10,13 +10,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import date
 from pathlib import Path
 
 from pos_maps import (
     POS_FULL_TO_SHORT, NUM_TO_SHORT, BATTED_BALL_TYPES, OFF_RESULTS, DEF_RESULTS,
-    HIT_RESULTS, OFF_OUT_RESULTS, QUICK_RESULTS,
+    HIT_RESULTS,
 )
 
 
@@ -36,6 +37,10 @@ def validate_submission(obj: dict) -> None:
     g = obj["game"]
     for key in ("date", "opponent", "firstAttack"):
         _require(key in g, f"game.{key} が無い")
+    _require(
+        isinstance(g.get("date"), str) and re.match(r"^\d{4}-\d{2}-\d{2}$", g["date"]) is not None,
+        f"game.date が YYYY-MM-DD 形式でない: {g.get('date')}",
+    )
     _require(isinstance(obj["lineup"], list) and obj["lineup"], "lineup が空か list でない")
     for row in obj["lineup"]:
         _require(isinstance(row, dict), "lineup 行が object でない")
@@ -43,6 +48,10 @@ def validate_submission(obj: dict) -> None:
     _require(isinstance(obj["atBats"], list), "atBats が list でない")
     for ab in obj["atBats"]:
         _require(isinstance(ab, dict), "atBats 行が object でない")
+        _require(
+            "order" in ab and isinstance(ab["order"], int) and not isinstance(ab["order"], bool),
+            "atBats 行に整数の order が無い",
+        )
         _require(ab.get("result") in OFF_RESULTS, f"atBats.result が不正: {ab.get('result')}")
         pos = ab.get("position")
         _require(pos is None or pos in NUM_TO_SHORT, f"atBats.position が不正: {pos}")
@@ -51,13 +60,28 @@ def validate_submission(obj: dict) -> None:
     _require(isinstance(obj["defense"], list), "defense が list でない")
     for dp in obj["defense"]:
         _require(isinstance(dp, dict), "defense 行が object でない")
+        _require(
+            "inning" in dp and isinstance(dp["inning"], int) and not isinstance(dp["inning"], bool),
+            "defense 行に整数の inning が無い",
+        )
         _require(dp.get("result") in DEF_RESULTS, f"defense.result が不正: {dp.get('result')}")
         f = dp.get("fielder")
         _require(f is None or f in NUM_TO_SHORT, f"defense.fielder が不正: {f}")
     _require(isinstance(obj.get("playerTally", {}), dict), "playerTally が object でない")
+    for k, v in obj.get("playerTally", {}).items():
+        _require(isinstance(v, dict), f"playerTally.{k} が object でない")
     ls = obj["linescore"]
     _require(isinstance(ls, dict), "linescore が object でない")
     _require("self" in ls and "opp" in ls, "linescore.self/opp が無い")
+    for side in ("self", "opp"):
+        _require(isinstance(ls[side], list), f"linescore.{side} が list でない")
+        for x in ls[side]:
+            _require(
+                x is None or (isinstance(x, (int, float)) and not isinstance(x, bool)),
+                f"linescore.{side} に数値でない要素: {x!r}",
+            )
+    if "substitutions" in obj:
+        _require(isinstance(obj["substitutions"], list), "substitutions が list でない")
 
 
 def load_submitted(dirpath: str) -> list[dict]:
@@ -69,6 +93,7 @@ def load_submitted(dirpath: str) -> list[dict]:
         except (json.JSONDecodeError, SubmittedGameError, TypeError, AttributeError, ValueError) as e:
             print(f"[skip] {path.name}: {e}", file=sys.stderr)
             continue
+        obj["_stem"] = path.stem
         out.append(obj)
     return out
 
@@ -90,6 +115,9 @@ def _safe_slug(opponent: str) -> str:
 
 
 def game_id_for(sub: dict) -> str:
+    stem = sub.get("_stem")
+    if stem:
+        return f"sub_{stem}"
     g = sub["game"]
     return f"sub_{g['date']}_{_safe_slug(g['opponent'])}"
 
@@ -313,18 +341,36 @@ def merge(base: dict, submissions: list[dict]) -> dict:
     out = _copy.deepcopy(base)
     roster = roster_index(out)
 
-    sub_ids = {game_id_for(s) for s in submissions}
-    # 既存の同 game_id(sub_) 分を全部除去してから入れ直す = 冪等
-    out["games"] = [g for g in out["games"] if g["game_id"] not in sub_ids]
-    out["batting_logs"] = [b for b in out["batting_logs"] if b["game_id"] not in sub_ids]
-    out["pitching_logs"] = [p for p in out["pitching_logs"] if p["game_id"] not in sub_ids]
+    # 既存の sub_ 由来の行を全部除去してから入れ直す = 冪等。
+    # ファイルを消したら試合も消える(--out がベースを指していても)。
+    out["games"] = [g for g in out["games"] if not str(g["game_id"]).startswith("sub_")]
+    out["batting_logs"] = [b for b in out["batting_logs"] if not str(b["game_id"]).startswith("sub_")]
+    out["pitching_logs"] = [p for p in out["pitching_logs"] if not str(p["game_id"]).startswith("sub_")]
 
+    seen: set[str] = set()
     for s in submissions:
-        out["games"].append(game_entry_from_submission(s))
-        out["batting_logs"].extend(batting_logs_from_submission(s, roster))
-        out["pitching_logs"].extend(pitching_logs_from_submission(s, roster))
+        gid = game_id_for(s)
+        if gid in seen:
+            print(f"[skip] {gid}: 同じ game_id の試合が複数あります", file=sys.stderr)
+            continue
+        try:
+            game_entry = game_entry_from_submission(s)
+            batting_logs = batting_logs_from_submission(s, roster)
+            pitching_logs = pitching_logs_from_submission(s, roster)
+        except Exception as e:  # noqa: BLE001 - 1試合の変換失敗で他を巻き込まない
+            print(f"[skip] {gid}: {e}", file=sys.stderr)
+            continue
+        out["games"].append(game_entry)
+        out["batting_logs"].extend(batting_logs)
+        out["pitching_logs"].extend(pitching_logs)
+        seen.add(gid)
 
-    out["games"].sort(key=lambda g: (g.get("date_sort", ""), g["game_id"]))
+    # 同一日付の試合は元の並び順を保つ(ベースが日付ソート済みとは限らない)
+    for i, g in enumerate(out["games"]):
+        g["__ord"] = i
+    out["games"].sort(key=lambda g: (g.get("date_sort", ""), g["__ord"]))
+    for g in out["games"]:
+        del g["__ord"]
     return out
 
 
