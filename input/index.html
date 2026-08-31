@@ -245,9 +245,19 @@
         </div>
         <label class="field-label">対戦相手</label>
         <input class="field" type="text" id="set-opponent" placeholder="例: 神戸グフ">
-        <label class="field-label">球場</label>
-        <input class="field" type="text" id="set-place" placeholder="例: 名谷公園野球場">
+        <div class="row2">
+          <div><label class="field-label">球場</label><input class="field" type="text" id="set-place" placeholder="例: 名谷公園野球場"></div>
+          <div><label class="field-label">この日の試合番号</label>
+            <select class="field-select" id="set-gameno">
+              <option value="1">1試合目</option>
+              <option value="2">2試合目(ダブルヘッダー)</option>
+              <option value="3">3試合目</option>
+            </select>
+          </div>
+        </div>
       </div>
+
+      <button class="ghost-btn" id="edit-sent-btn" style="margin-top:10px">☁️ 送信済みの試合を修正／取り消し</button>
 
       <h2 class="sec">打順・守備(自チーム)</h2>
       <div class="card" id="lineup-card"></div>
@@ -311,22 +321,35 @@
 
     <!-- 3. 書き出し -->
     <section class="screen" id="screen-export">
-      <h2 class="sec">試合終了 — データの書き出し</h2>
-      <div class="note">下のテキストをコピーして、LINEグループに貼るか谷本に送ってください。サイト(成績ポータル)へは谷本が反映します。</div>
+      <h2 class="sec">試合終了 — サイトへ反映</h2>
       <div class="card" style="padding:12px">
         <div id="export-summary" style="font-size:12.5px;line-height:1.7"></div>
+        <button class="primary-btn" id="send-btn">🚀 サイトに送信</button>
+        <div id="send-status" style="font-size:11.5px;line-height:1.6;margin-top:8px;min-height:16px"></div>
+      </div>
+
+      <h2 class="sec">手動でも渡せます(送信が使えない時)</h2>
+      <div class="card" style="padding:12px">
         <div class="fmt-toggle">
           <button class="fmt-btn active" data-fmt="text">読みやすいテキスト</button>
           <button class="fmt-btn" data-fmt="json">詳細データ(JSON)</button>
         </div>
         <div id="export-charcount" style="font-size:10px;color:var(--ink-faint);text-align:right;margin-top:4px"></div>
         <textarea class="export-box" id="export-box" readonly></textarea>
-        <button class="primary-btn" id="copy-btn">📋 コピー</button>
+        <button class="ghost-btn" id="copy-btn">📋 コピー</button>
         <button class="ghost-btn" id="share-btn">LINE等で送る</button>
         <button class="ghost-btn" id="download-btn">ファイルで保存</button>
       </div>
       <button class="ghost-btn" id="back-to-sheet-btn">← まだ入力を続ける</button>
       <button class="danger-btn" id="new-game-btn">この試合を完了 → 新しい試合を始める</button>
+    </section>
+
+    <!-- 4. 送信済みの試合を修正 -->
+    <section class="screen" id="screen-sent">
+      <div class="note">サイトに送信済みの試合の一覧です。選ぶと読み込んで編集でき、再送信で上書きされます。「削除」でサイトから取り消せます。</div>
+      <div class="card" id="sent-list"></div>
+      <div id="sent-status" style="font-size:11.5px;color:var(--ink-faint);margin-top:8px;min-height:16px"></div>
+      <button class="ghost-btn" id="sent-back-btn">← 設定に戻る</button>
     </section>
   </main>
 
@@ -457,7 +480,13 @@ var AUTH_KEY = "peccino_input_auth_v1";
 var GAME_KEY = "peccino_input_game_v1";
 var PREV_KEY = "peccino_input_game_v1_prev";   // 1つ前の状態(取り違え・破損時のフォールバック)
 var ARCHIVE_KEY = "peccino_input_archive_v1";   // 書き出し済みの過去試合(明示削除するまで残す)
+var SENT_KEY = "peccino_input_sent_v1";         // サイトに送信済みの submission id 記録
 var ARCHIVE_MAX = 8;
+
+// サイト送信の中継 Worker。URL を貰ったらここに入れて再デプロイ。空なら送信ボタンは無効。
+var WORKER_URL = "";
+var GH_OWNER_REPO = "DAICHITANIMOTO/peccino-portal";
+var authSecret = null; // 今セッションで入力された合言葉(送信の secret に使う。localStorage には保存しない)
 
 // 選手名鑑(2026-08-28 dataset.jsonより。スタッフは記録者候補にのみ使用)
 var ROSTER = [
@@ -497,7 +526,7 @@ function blankGame(){
   var d = today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
   return {
     createdAt: Date.now(),
-    info: { recorder:"将軍", date:d, opponent:"", place:"", firstAttack:1 },
+    info: { recorder:"将軍", date:d, opponent:"", place:"", firstAttack:1, gameNo:1 },
     lineup: [], // {order, name, position}
     atBats: [], // {id, order, batter, inning, result, pos, ballType}
     defense: [], // {id, inning, result, fielder, ballType, runsAllowed}
@@ -542,6 +571,19 @@ function archiveCurrentGame(){
 function deleteArchived(id){
   setArchive(getArchive().filter(function(x){ return String(x.id)!==String(id); }));
 }
+function getSent(){ try{ var s=JSON.parse(localStorage.getItem(SENT_KEY)||"{}"); return (s&&typeof s==="object")?s:{}; }catch(e){ return {}; } }
+function markSent(id){ try{ var s=getSent(); s[id]=Date.now(); localStorage.setItem(SENT_KEY, JSON.stringify(s)); }catch(e){} }
+function unmarkSent(id){ try{ var s=getSent(); delete s[id]; localStorage.setItem(SENT_KEY, JSON.stringify(s)); }catch(e){} }
+
+// 送信/ファイル名に使う id。 例: 2026-08-30_神戸グフ  /  ダブルヘッダー2試合目は _2
+function submissionId(g){
+  var base = (g.info.date||"") + "_" + slugOpponent(g.info.opponent||"未設定");
+  var n = Math.max(1, parseInt(g.info.gameNo,10) || 1);
+  return n>1 ? (base + "_" + n) : base;
+}
+function slugOpponent(s){
+  return String(s).replace(/[\/\\:*?"<>|\s]+/g, "-").replace(/^\.+/, "").slice(0,40) || "未設定";
+}
 // 画面を閉じる・バックグラウンドに回る直前にも保存(保険)
 function bindPersistenceGuards(){
   function flush(){ if(G) save(); }
@@ -572,7 +614,7 @@ function tenPos(){ return G.info.firstAttack ? "表" : "裏"; } // 自チーム�
 
 /* ============ 画面遷移 ============ */
 function show(screen){
-  ["gate","setup","sheet","export"].forEach(function(s){
+  ["gate","setup","sheet","export","sent"].forEach(function(s){
     $("screen-"+s).classList.toggle("active", s===screen);
   });
   $("footer-bar").style.display = (screen==="sheet") ? "flex" : "none";
@@ -598,6 +640,7 @@ async function tryAuth(){
   var h = await sha256hex(v);
   if(h===PW_HASH){
     try{ localStorage.setItem(AUTH_KEY,"ok"); }catch(e){}
+    authSecret = v; // 送信の secret に使う(このセッションのみ、localStorage には残さない)
     $("gate-error").textContent = "";
     afterAuth();
   } else {
@@ -627,6 +670,8 @@ function renderSetup(){
   $("set-opponent").value = G.info.opponent;
   $("set-place").value = G.info.place;
   $("set-firstattack").value = String(G.info.firstAttack);
+  $("set-gameno").value = String(G.info.gameNo || 1);
+  $("edit-sent-btn").style.display = WORKER_URL ? "block" : "none";
 
   // 打順(最低9行)
   if(G.lineup.length === 0){
@@ -650,12 +695,17 @@ function renderArchiveList(){
   $("archive-head").style.display = a.length ? "flex" : "none";
   $("archive-list").style.display = a.length ? "block" : "none";
   if(!a.length){ $("archive-list").innerHTML = ""; return; }
+  var sent = getSent();
   $("archive-list").innerHTML = a.map(function(item){
     var g = item.data;
     var abN = (g.atBats||[]).length;
+    var sid = submissionId(g);
+    var isSent = !!sent[sid];
     return '<div class="archive-row">'
       + '<div class="ainfo"><b>'+esc(g.info.date||"")+'</b> vs '+esc(g.info.opponent||"(相手未設定)")
+        + (isSent ? ' <span style="color:var(--accent);font-size:10px">✓送信済</span>' : '')
         + '<span class="ameta">打席'+abN+'件 ・ 記録:'+esc(g.info.recorder||"")+'</span></div>'
+      + (WORKER_URL ? '<button class="acopy" data-aid="'+item.id+'" data-send="1">'+(isSent?'再送信':'🚀送信')+'</button>' : '')
       + '<button class="acopy" data-aid="'+item.id+'">コピー</button>'
       + '<button class="adel" data-aid="'+item.id+'">削除</button>'
       + '</div>';
@@ -664,6 +714,7 @@ function renderArchiveList(){
     b.addEventListener("click", function(){
       var item = getArchive().find(function(x){ return String(x.id)===b.dataset.aid; });
       if(!item) return;
+      if(b.dataset.send){ sendGame(item.data, b); return; }
       navigator.clipboard.writeText(buildText(item.data)).then(function(){ toast("コピーしました"); }, function(){ toast("コピーできませんでした"); });
     });
   });
@@ -710,6 +761,9 @@ function bindSetup(){
   $("set-opponent").addEventListener("input", function(){ G.info.opponent=this.value; save(); });
   $("set-place").addEventListener("input", function(){ G.info.place=this.value; save(); });
   $("set-firstattack").addEventListener("change", function(){ G.info.firstAttack=+this.value; save(); });
+  $("set-gameno").addEventListener("change", function(){ G.info.gameNo=parseInt(this.value,10)||1; save(); });
+  $("edit-sent-btn").addEventListener("click", openSentScreen);
+  $("sent-back-btn").addEventListener("click", function(){ renderSetup(); show("setup"); });
   $("add-lineup-btn").addEventListener("click", function(){
     G.lineup.push({ order:G.lineup.length+1, name:"", position:"控え" });
     renderLineupCard(); save();
@@ -1227,11 +1281,156 @@ function renderExport(){
   var selfTotal = data.linescore.self.reduce(function(a,b){ return a+(b||0); },0);
   var oppTotal = data.linescore.opp.reduce(function(a,b){ return a+(b||0); },0);
   var res = selfTotal>oppTotal?"勝ち":(selfTotal<oppTotal?"負け":"引分け");
+  var sid = submissionId(G);
+  var already = !!getSent()[sid];
   $("export-summary").innerHTML =
-    "<b>"+esc(data.game.date)+"　vs "+esc(data.game.opponent||"")+"</b><br>"
+    "<b>"+esc(data.game.date)+"　vs "+esc(data.game.opponent||"")+"</b>"
+    + (G.info.gameNo>1 ? "（"+G.info.gameNo+"試合目）" : "") + "<br>"
     + "スコア: 自 "+selfTotal+" − "+oppTotal+" 相手 ("+res+")<br>"
     + "打席記録: "+data.atBats.length+"件 ・ 守備記録: "+data.defense.length+"件 ・ 記録者: "+esc(data.game.recordedBy);
+  var btn = $("send-btn");
+  if(!WORKER_URL){
+    btn.textContent = "🚀 サイトに送信（未設定）";
+    btn.disabled = true;
+    $("send-status").textContent = "送信先(Worker)が未設定です。今は下のテキストをコピーして谷本に送ってください。";
+  } else {
+    btn.disabled = false;
+    btn.textContent = already ? "🔁 サイトに再送信（上書き）" : "🚀 サイトに送信";
+    $("send-status").textContent = already ? "この試合は送信済みです（"+esc(sid)+"）。修正して再送信すると上書きされます。" : "";
+  }
   applyExportFmt();
+}
+
+/* ============ サイトへ送信 ============ */
+function getSecret(){
+  if(authSecret) return authSecret;
+  var v = prompt("送信用の合言葉をもう一度入力してください");
+  if(v) authSecret = v.trim();
+  return authSecret;
+}
+async function postWorker(path, body){
+  var res = await fetch(WORKER_URL.replace(/\/$/,"") + path, {
+    method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)
+  });
+  var j = null; try{ j = await res.json(); }catch(e){}
+  return { ok: res.ok && j && j.ok, status: res.status, error: (j && j.error) || ("HTTP "+res.status), j: j };
+}
+// g を Worker に送る。btn を渡すと一時的に「送信中…」表示にする
+async function sendGame(g, btn){
+  if(!WORKER_URL){ toast("送信先が未設定です"); return; }
+  var secret = getSecret();
+  if(!secret){ return; }
+  var id = submissionId(g);
+  var setS = function(msg){ if($("send-status")) $("send-status").textContent = msg; };
+  var oldLabel = btn ? btn.textContent : null;
+  if(btn){ btn.disabled = true; btn.textContent = "送信中…"; }
+  setS("送信中…");
+  try{
+    var r = await postWorker("/submit", { secret:secret, id:id, gameJson: exportFor(g), gameText: buildText(g) });
+    if(r.ok){
+      markSent(id);
+      setS("✓ 送信しました（"+id+"）。数分でサイトに反映されます。");
+      toast("送信しました");
+      if(btn && btn.id!=="send-btn"){ renderArchiveList(); }
+      else if(btn){ btn.textContent = "🔁 サイトに再送信（上書き）"; btn.disabled = false; }
+    } else {
+      if(r.status===401) authSecret = null;
+      setS("✗ 送信できませんでした（"+esc(r.error)+"）。下のテキストをコピーして谷本に送ってください。");
+      toast("送信できませんでした");
+      if(btn){ btn.textContent = oldLabel; btn.disabled = false; }
+    }
+  }catch(e){
+    setS("✗ 送信できませんでした（ネットワーク）。下のテキストをコピーして谷本に送ってください。");
+    if(btn){ btn.textContent = oldLabel; btn.disabled = false; }
+  }
+}
+
+/* ============ 送信済みの試合を修正 ============ */
+function gameFromExport(d){
+  var g = blankGame();
+  g.createdAt = Date.now();
+  g.info = {
+    recorder: (d.game && d.game.recordedBy) || "将軍",
+    date: (d.game && d.game.date) || g.info.date,
+    opponent: (d.game && d.game.opponent) || "",
+    place: (d.game && d.game.place) || "",
+    firstAttack: (d.game && d.game.firstAttack) ? 1 : 0,
+    gameNo: 1
+  };
+  g.lineup = (d.lineup||[]).map(function(r){ return { order:r.order, name:r.name, position:r.position }; });
+  g.atBats = (d.atBats||[]).map(function(ab){
+    return { id:uid(), order:ab.order, batter:ab.batter, seq:(ab.pa||1)-1, inning:ab.inning||1,
+             result:ab.result, pos:ab.position, ballType:ab.ballType };
+  });
+  g.defense = (d.defense||[]).map(function(p){
+    return { id:uid(), inning:p.inning||1, result:p.result, fielder:p.fielder, ballType:p.ballType, runsAllowed:p.runsAllowed||0 };
+  });
+  g.tally = d.playerTally || {};
+  g.linescore = { self:{}, opp:{} };
+  (d.linescore && d.linescore.self || []).forEach(function(v,i){ if(v!=null) g.linescore.self[i+1]=v; });
+  (d.linescore && d.linescore.opp || []).forEach(function(v,i){ if(v!=null) g.linescore.opp[i+1]=v; });
+  g.subs = d.substitutions || [];
+  g.state = { inning: (d.finalState && d.finalState.inning) || 1, half:"off", outs:0 };
+  g.started = true;
+  return g;
+}
+async function openSentScreen(){
+  show("sent");
+  $("sent-list").innerHTML = '<div class="sub-log-item" style="color:var(--ink-faint)">読み込み中…</div>';
+  $("sent-status").textContent = "";
+  try{
+    var res = await fetch("https://api.github.com/repos/"+GH_OWNER_REPO+"/contents/submitted-games?ref=main", { headers:{ "Accept":"application/vnd.github+json" } });
+    if(!res.ok){ throw new Error("HTTP "+res.status); }
+    var list = await res.json();
+    var jsons = (Array.isArray(list)?list:[]).filter(function(f){ return /\.json$/.test(f.name); })
+      .sort(function(a,b){ return a.name<b.name ? 1 : -1; });
+    if(!jsons.length){ $("sent-list").innerHTML = '<div class="sub-log-item" style="color:var(--ink-faint)">送信済みの試合はまだありません</div>'; return; }
+    $("sent-list").innerHTML = jsons.map(function(f){
+      var id = f.name.replace(/\.json$/,"");
+      var m = id.match(/^(\d{4}-\d{2}-\d{2})_(.+)$/);
+      var label = m ? (m[1]+" vs "+m[2].replace(/_/g," ")) : id;
+      return '<div class="archive-row"><div class="ainfo"><b>'+esc(label)+'</b>'
+        + '<span class="ameta">'+esc(id)+'</span></div>'
+        + '<button class="acopy" data-url="'+esc(f.download_url)+'" data-id="'+esc(id)+'">修正</button>'
+        + '<button class="adel" data-id="'+esc(id)+'">削除</button></div>';
+    }).join("");
+    $("sent-list").querySelectorAll(".acopy").forEach(function(b){
+      b.addEventListener("click", function(){ loadSentGame(b.dataset.url, b.dataset.id); });
+    });
+    $("sent-list").querySelectorAll(".adel").forEach(function(b){
+      b.addEventListener("click", function(){ deleteSentGame(b.dataset.id); });
+    });
+  }catch(e){
+    $("sent-list").innerHTML = '<div class="sub-log-item" style="color:var(--lose)">一覧を取得できませんでした（'+esc(String(e.message||e))+'）</div>';
+  }
+}
+async function loadSentGame(url, id){
+  if(G && G.started && (G.atBats.length || G.defense.length)){
+    if(!confirm("入力中の試合を置き換えて、この送信済み試合を読み込みます。よろしいですか?")) return;
+  }
+  $("sent-status").textContent = "読み込み中…";
+  try{
+    var res = await fetch(url, { cache:"no-store" });
+    var d = await res.json();
+    G = gameFromExport(d);
+    var m = id.match(/_(\d+)$/);
+    if(m) G.info.gameNo = parseInt(m[1],10);
+    save();
+    renderSheet();
+    show("sheet");
+    toast("読み込みました。直したら書き出し画面から再送信してください");
+  }catch(e){
+    $("sent-status").textContent = "読み込めませんでした（"+esc(String(e.message||e))+"）";
+  }
+}
+async function deleteSentGame(id){
+  if(!confirm("送信済みの試合「"+id+"」をサイトから削除します。数分でサイトからも消えます。よろしいですか?")) return;
+  var secret = getSecret();
+  if(!secret) return;
+  $("sent-status").textContent = "削除中…";
+  var r = await postWorker("/delete", { secret:secret, id:id });
+  if(r.ok){ unmarkSent(id); $("sent-status").textContent = "✓ 削除しました。数分でサイトに反映されます。"; openSentScreen(); }
+  else { if(r.status===401) authSecret=null; $("sent-status").textContent = "✗ 削除できませんでした（"+esc(r.error)+"）"; }
 }
 
 /* ============ イベント束ね ============ */
@@ -1329,6 +1528,7 @@ function bindSheet(){
   // 書き出し
   $("footer-finish").addEventListener("click", function(){ renderExport(); show("export"); });
   $("back-to-sheet-btn").addEventListener("click", function(){ show("sheet"); });
+  $("send-btn").addEventListener("click", function(){ sendGame(G, this); });
   document.querySelectorAll(".fmt-btn").forEach(function(b){
     b.addEventListener("click", function(){ exportFmt = b.dataset.fmt; applyExportFmt(); });
   });
