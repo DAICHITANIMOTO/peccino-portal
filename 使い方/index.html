@@ -93,11 +93,11 @@
     border:1px dashed var(--line); border-radius:12px; padding:10px 12px}
 
   /* steps */
-  ol.steps{list-style:none; counter-reset:s; margin:0; padding:0; display:flex; flex-direction:column; gap:12px}
-  ol.steps li{counter-increment:s; display:flex; gap:14px; align-items:flex-start; font-size:14.5px}
-  ol.steps li::before{content:counter(s); flex-shrink:0; width:26px; height:26px; border-radius:50%;
+  ol.steps{list-style:none; counter-reset:s; margin:0; padding:0; display:flex; flex-direction:column; gap:13px}
+  ol.steps li{counter-increment:s; position:relative; padding-left:40px; font-size:14.5px; min-height:26px}
+  ol.steps li::before{content:counter(s); position:absolute; left:0; top:0; width:26px; height:26px; border-radius:50%;
     background:var(--accent); color:var(--accent-ink); font-family:"Oswald",sans-serif; font-weight:600;
-    display:grid; place-items:center; font-size:14px; margin-top:1px}
+    display:grid; place-items:center; font-size:14px}
   .os-tabs{display:flex; gap:8px; margin:4px 0 14px}
   .os-tabs span{font-size:12px; font-weight:700; letter-spacing:.04em; padding:5px 12px; border-radius:999px;
     background:var(--accent-soft); color:var(--accent)}
