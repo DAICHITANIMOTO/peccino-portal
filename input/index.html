@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0E1512">
 <title>Peccino スコア入力</title>
@@ -159,7 +159,7 @@
   .archive-row .adel { background:none; border:none; color:var(--ink-faint); font-size:11px; font-weight:700; padding:6px 4px; flex-shrink:0; }
 
   .footer-bar {
-    position:sticky; bottom:0; padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+    position:sticky; bottom:0; padding:10px 14px max(12px, env(safe-area-inset-bottom));
     background:color-mix(in srgb, var(--surface) 94%, transparent); backdrop-filter:blur(10px);
     border-top:1px solid var(--line); display:flex; gap:8px;
   }
@@ -377,7 +377,7 @@
 
     <div class="step-label">① どこに飛んだか(守備位置)</div>
     <div class="btn-grid" id="off-pos"></div>
-    <div class="step-label">② 打球タイプ</div>
+    <div class="step-label">② 打球タイプ（必須）</div>
     <div class="btn-grid cols-4" id="off-type">
       <button class="opt-btn" data-t="ゴロ">ゴロ</button>
       <button class="opt-btn" data-t="フライ">フライ</button>
@@ -1013,6 +1013,7 @@ function saveEntry(){
   if(offSel.quick){ result = offSel.quick; }
   else {
     if(!offSel.pos || !offSel.result){ toast("守備位置と結果を選んでください"); return; }
+    if(!offSel.type){ toast("打球タイプ(ゴロ/フライ/ライナー/内野フライ)も選んでください"); return; }
     result = offSel.result; pos = +offSel.pos; type = offSel.type;
   }
   var row = G.lineup.find(function(r){ return r.order===entryCtx.order; });
@@ -1472,6 +1473,12 @@ function bindSheet(){
     var b=e.target.closest(".opt-btn"); if(!b) return;
     document.querySelectorAll("#off-result .opt-btn").forEach(function(x){ x.classList.remove("sel"); }); b.classList.add("sel");
     offSel.result = b.dataset.r;
+    // 本塁打は打球タイプ未選択ならフライを初期選択(ふつうフライ。ライナー弾なら選び直す)
+    if(b.dataset.r === "本塁打" && !offSel.type){
+      offSel.type = "フライ";
+      var tb = document.querySelector('#off-type .opt-btn[data-t="フライ"]');
+      if(tb) tb.classList.add("sel");
+    }
   });
   $("off-save").addEventListener("click", saveEntry);
   $("off-delete").addEventListener("click", deleteEntry);

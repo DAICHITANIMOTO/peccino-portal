@@ -20,6 +20,25 @@ from pos_maps import (
     HIT_RESULTS,
 )
 
+# 入力アプリの打球タイプ -> 成績ポータル(detail_2026)の type 表記
+TYPE_TO_DETAIL = {"ゴロ": "ゴロ", "フライ": "フライ", "ライナー": "ライナー", "内野フライ": "内フライ"}
+
+# 打球が「飛んだ」= スプレーチャート/打席内容の対象になる結果
+BATTED_RESULTS = {"アウト", "単打", "二塁打", "三塁打", "本塁打", "失策出塁"}
+
+# 守備位置(1-9) -> 打球方向。打者の左右で引っ張り/流しが入れ替わる。
+_DIR_RIGHT = {5: "引っ張り", 6: "引っ張り", 7: "引っ張り",
+              1: "センター", 2: "センター", 8: "センター",
+              3: "流し", 4: "流し", 9: "流し"}
+_DIR_LEFT = {3: "引っ張り", 4: "引っ張り", 9: "引っ張り",
+             1: "センター", 2: "センター", 8: "センター",
+             5: "流し", 6: "流し", 7: "流し"}
+
+
+def _direction_from_position(pos: int, bats: str) -> str:
+    table = _DIR_LEFT if bats == "左" else _DIR_RIGHT
+    return table.get(int(pos), "センター")
+
 
 class SubmittedGameError(Exception):
     """submitted-game JSON が期待する形をしていない。"""
@@ -156,6 +175,52 @@ def roster_index(base_dataset: dict) -> dict:
     return {p["name"]: str(p.get("number", "")) for p in base_dataset.get("players", [])}
 
 
+def roster_bats(base_dataset: dict) -> dict:
+    """選手名 -> '右' | '左'。throw_bat('右投 / 右打' 等)から判定。不明は '右'。"""
+    out: dict = {}
+    for p in base_dataset.get("players", []):
+        tb = str(p.get("throw_bat", ""))
+        out[p["name"]] = "左" if "左打" in tb else "右"
+    return out
+
+
+def _pa_notation(ab: dict) -> str:
+    """1打席の表記。書き出しJSONの notation をそのまま使い、無ければ最小限を組む。"""
+    n = ab.get("notation")
+    if isinstance(n, str) and n:
+        return n
+    res = ab.get("result", "")
+    if res in ("四球", "死球", "三振", "犠打", "犠飛"):
+        return res
+    pos = ab.get("position")
+    tc = {"ゴロ": "ゴ", "フライ": "飛", "ライナー": "直", "内野フライ": "内"}.get(ab.get("ballType"), "")
+    short = {"単打": "安", "二塁打": "二", "三塁打": "三", "本塁打": "本", "失策出塁": "失"}.get(res, "")
+    return f"{'' if pos is None else pos}{short}{tc}"
+
+
+def batted_balls_from_submission(sub: dict, bats: dict) -> dict:
+    """選手名 -> [{direction, type, src:'app'}]。打球が飛んで守備位置と打球タイプが
+    両方ある打席だけをスプレーチャート用に集計する。"""
+    lineup_by_order = {r["order"]: r for r in sub["lineup"]}
+    out: dict = {}
+    for ab in sub["atBats"]:
+        if ab.get("result") not in BATTED_RESULTS:
+            continue
+        pos = ab.get("position")
+        bt = ab.get("ballType")
+        if pos is None or bt is None:
+            continue
+        name = ab.get("batter") or lineup_by_order.get(ab["order"], {}).get("name", "")
+        if not name:
+            continue
+        out.setdefault(name, []).append({
+            "direction": _direction_from_position(pos, bats.get(name, "右")),
+            "type": TYPE_TO_DETAIL.get(bt, bt),
+            "src": "app",
+        })
+    return out
+
+
 def _blank_batting(game_id: str, name: str, roster: dict) -> dict:
     row = {
         "game_id": game_id,
@@ -165,6 +230,7 @@ def _blank_batting(game_id: str, name: str, roster: dict) -> dict:
         "started": "先発",
         "order": 0,
         "position": "",
+        "pa_log": [],
     }
     for f in BATTING_ZERO_FIELDS:
         row[f] = 0
@@ -196,8 +262,8 @@ def batting_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
         short = POS_FULL_TO_SHORT.get(lr.get("position", ""), "")
         ensure(lr["name"], lr["order"], short, "先発")
 
-    # atBats を打者ごとに集計
-    for ab in sub["atBats"]:
+    # atBats を打者ごとに集計(打席順に)
+    for ab in sorted(sub["atBats"], key=lambda a: (a.get("order", 0), a.get("pa", 0))):
         name = ab.get("batter") or lineup_by_order.get(ab["order"], {}).get("name", "")
         if not name:
             continue
@@ -205,6 +271,7 @@ def batting_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
         lr = lineup_by_order.get(ab["order"], {})
         short = POS_FULL_TO_SHORT.get(lr.get("position", ""), "")
         row = ensure(name, ab["order"], short, started)
+        row.setdefault("pa_log", []).append(_pa_notation(ab))
         res = ab["result"]
         row["pa"] += 1
         if res not in ("四球", "死球", "犠打", "犠飛"):
@@ -340,12 +407,22 @@ def merge(base: dict, submissions: list[dict]) -> dict:
     import copy as _copy
     out = _copy.deepcopy(base)
     roster = roster_index(out)
+    bats = roster_bats(out)
 
     # 既存の sub_ 由来の行を全部除去してから入れ直す = 冪等。
     # ファイルを消したら試合も消える(--out がベースを指していても)。
     out["games"] = [g for g in out["games"] if not str(g["game_id"]).startswith("sub_")]
     out["batting_logs"] = [b for b in out["batting_logs"] if not str(b["game_id"]).startswith("sub_")]
     out["pitching_logs"] = [p for p in out["pitching_logs"] if not str(p["game_id"]).startswith("sub_")]
+
+    # detail_2026 の中の「アプリ由来(src=app)」打球を除去してから入れ直す = 冪等
+    d26 = out.setdefault("detail_2026", {})
+    for det in d26.values():
+        bb = (det.get("batting") or {}).get("batted_balls")
+        if isinstance(bb, list):
+            det["batting"]["batted_balls"] = [
+                x for x in bb if not (isinstance(x, dict) and x.get("src") == "app")
+            ]
 
     seen: set[str] = set()
     for s in submissions:
@@ -357,12 +434,20 @@ def merge(base: dict, submissions: list[dict]) -> dict:
             game_entry = game_entry_from_submission(s)
             batting_logs = batting_logs_from_submission(s, roster)
             pitching_logs = pitching_logs_from_submission(s, roster)
+            balls_by_name = batted_balls_from_submission(s, bats)
         except Exception as e:  # noqa: BLE001 - 1試合の変換失敗で他を巻き込まない
             print(f"[skip] {gid}: {e}", file=sys.stderr)
             continue
         out["games"].append(game_entry)
         out["batting_logs"].extend(batting_logs)
         out["pitching_logs"].extend(pitching_logs)
+        # 2026年の試合なら detail_2026(スプレーチャート)にも打球を足す
+        if s["game"]["date"].startswith("2026-"):
+            for name, balls in balls_by_name.items():
+                det = d26.setdefault(name, {"batting": {
+                    "batted_balls": [], "risp": {"pa": 0, "h": 0}, "two_strike": {"pa": 0, "h": 0}}})
+                det.setdefault("batting", {}).setdefault("batted_balls", [])
+                det["batting"]["batted_balls"].extend(balls)
         seen.add(gid)
 
     # 同一日付の試合は元の並び順を保つ(ベースが日付ソート済みとは限らない)
@@ -396,6 +481,9 @@ def main(argv: list[str] | None = None) -> int:
         if not isinstance(reparsed.get(key), list):
             print(f"[abort] {key} が list でない。中断します。", file=sys.stderr)
             return 1
+    if "detail_2026" in reparsed and not isinstance(reparsed["detail_2026"], dict):
+        print("[abort] detail_2026 が object でない。中断します。", file=sys.stderr)
+        return 1
 
     out_path = Path(args.out)
     tmp = out_path.with_suffix(out_path.suffix + ".tmp")

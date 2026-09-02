@@ -361,5 +361,84 @@ def test_generated_rows_match_dataset_schema():
     gen_bat = ms.batting_logs_from_submission(sub, roster)
     gen_pit = ms.pitching_logs_from_submission(sub, roster)
 
-    assert set(gen_bat[0]) == set(ref_bat)
+    # 送信試合の batting_logs は pa_log を追加で持つ(teams.one由来には無い)。それ以外は完全一致
+    assert set(gen_bat[0]) - {"pa_log"} == set(ref_bat)
     assert set(gen_pit[0]) == set(ref_pit)
+
+
+# ===== pa_log / スプレーチャート(打球方向) =====
+
+def test_batting_logs_have_pa_log():
+    sub = load_fixture("game_normal.json")
+    roster = {"谷本大知": "1", "福田龍之介": "7", "中村駿": "19", "藤堂真雄": "2",
+              "半井大稀": "3", "遠部巧大": "4"}
+    logs = ms.batting_logs_from_submission(sub, roster)
+    by = {r["name"]: r for r in logs}
+    assert by["谷本大知"]["pa_log"] == ["6安ゴ", "7二直"]
+    assert by["福田龍之介"]["pa_log"] == ["4ゴ", "四球"]
+    assert by["中村駿"]["pa_log"] == ["三振"]
+    assert by["藤堂真雄"]["pa_log"] == ["8本飛"]
+    assert by["遠部巧大"]["pa_log"] == ["5失ゴ"]
+    # 打席のない先発は空
+    assert by["榊原健斗"]["pa_log"] == []
+
+
+def test_direction_from_position_right_and_left():
+    assert ms._direction_from_position(5, "右") == "引っ張り"
+    assert ms._direction_from_position(7, "右") == "引っ張り"
+    assert ms._direction_from_position(8, "右") == "センター"
+    assert ms._direction_from_position(9, "右") == "流し"
+    # 左打者は引っ張り/流しが反転
+    assert ms._direction_from_position(9, "左") == "引っ張り"
+    assert ms._direction_from_position(7, "左") == "流し"
+    assert ms._direction_from_position(8, "左") == "センター"
+
+
+def test_batted_balls_from_submission():
+    sub = load_fixture("game_normal.json")
+    bats = {"谷本大知": "右", "福田龍之介": "右", "藤堂真雄": "右", "遠部巧大": "右"}
+    bb = ms.batted_balls_from_submission(sub, bats)
+    # 三振・四球・犠打は打球なし → 入らない
+    assert set(bb) == {"谷本大知", "福田龍之介", "藤堂真雄", "遠部巧大"}
+    assert bb["谷本大知"] == [
+        {"direction": "引っ張り", "type": "ゴロ", "src": "app"},
+        {"direction": "引っ張り", "type": "ライナー", "src": "app"},
+    ]
+    assert bb["藤堂真雄"] == [{"direction": "センター", "type": "フライ", "src": "app"}]
+    assert bb["福田龍之介"] == [{"direction": "流し", "type": "ゴロ", "src": "app"}]
+
+
+def test_batted_balls_skips_missing_balltype():
+    sub = load_fixture("game_normal.json")
+    sub["atBats"].append({"order": 7, "batter": "榊原健斗", "inning": 5, "pa": 1,
+                          "result": "単打", "position": 3, "ballType": None, "notation": "3安"})
+    bb = ms.batted_balls_from_submission(sub, {})
+    assert "榊原健斗" not in bb  # ballType が無いのでスプレー対象外
+
+
+def test_merge_appends_to_detail_2026_and_is_idempotent():
+    base = load_fixture("dataset_base_min.json")
+    base["detail_2026"] = {
+        "谷本大知": {"batting": {"batted_balls": [{"direction": "センター", "type": "ゴロ"}],
+                                "risp": {"pa": 0, "h": 0}, "two_strike": {"pa": 0, "h": 0}}}
+    }
+    sub = load_fixture("game_normal.json")
+    once = ms.merge(base, [sub])
+    tan = once["detail_2026"]["谷本大知"]["batting"]["batted_balls"]
+    # Excel由来1件(src無し) + アプリ由来2件(src=app)
+    assert sum(1 for x in tan if x.get("src") == "app") == 2
+    assert sum(1 for x in tan if "src" not in x) == 1
+    # 新規選手(藤堂)にも detail_2026 が作られる
+    assert "藤堂真雄" in once["detail_2026"]
+    # 冪等: もう一度マージしても増えない
+    twice = ms.merge(once, [sub])
+    assert twice == once
+
+
+def test_merge_skips_detail_for_non_2026_game():
+    base = load_fixture("dataset_base_min.json")
+    base["detail_2026"] = {}
+    sub = load_fixture("game_normal.json")
+    sub["game"]["date"] = "2025-08-30"
+    merged = ms.merge(base, [sub])
+    assert merged["detail_2026"] == {}  # 2025年の試合は detail に足さない
