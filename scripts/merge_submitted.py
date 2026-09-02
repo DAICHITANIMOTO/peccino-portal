@@ -199,8 +199,8 @@ def _pa_notation(ab: dict) -> str:
 
 
 def batted_balls_from_submission(sub: dict, bats: dict) -> dict:
-    """選手名 -> [{direction, type, src:'app'}]。打球が飛んで守備位置と打球タイプが
-    両方ある打席だけをスプレーチャート用に集計する。"""
+    """選手名 -> [{direction, type, hit, src:'app'}]。打球が飛んで守備位置と打球タイプが
+    両方ある打席だけをスプレーチャート用に集計する。hit=安打かどうか(太線/細線の出し分け用)。"""
     lineup_by_order = {r["order"]: r for r in sub["lineup"]}
     out: dict = {}
     for ab in sub["atBats"]:
@@ -216,6 +216,7 @@ def batted_balls_from_submission(sub: dict, bats: dict) -> dict:
         out.setdefault(name, []).append({
             "direction": _direction_from_position(pos, bats.get(name, "右")),
             "type": TYPE_TO_DETAIL.get(bt, bt),
+            "hit": ab.get("result") in HIT_RESULTS,
             "src": "app",
         })
     return out

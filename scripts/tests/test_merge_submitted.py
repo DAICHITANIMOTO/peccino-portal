@@ -401,11 +401,13 @@ def test_batted_balls_from_submission():
     # 三振・四球・犠打は打球なし → 入らない
     assert set(bb) == {"谷本大知", "福田龍之介", "藤堂真雄", "遠部巧大"}
     assert bb["谷本大知"] == [
-        {"direction": "引っ張り", "type": "ゴロ", "src": "app"},
-        {"direction": "引っ張り", "type": "ライナー", "src": "app"},
+        {"direction": "引っ張り", "type": "ゴロ", "hit": True, "src": "app"},
+        {"direction": "引っ張り", "type": "ライナー", "hit": True, "src": "app"},
     ]
-    assert bb["藤堂真雄"] == [{"direction": "センター", "type": "フライ", "src": "app"}]
-    assert bb["福田龍之介"] == [{"direction": "流し", "type": "ゴロ", "src": "app"}]
+    # 本塁打は安打、失策出塁は非安打
+    assert bb["藤堂真雄"] == [{"direction": "センター", "type": "フライ", "hit": True, "src": "app"}]
+    assert bb["福田龍之介"] == [{"direction": "流し", "type": "ゴロ", "hit": False, "src": "app"}]
+    assert bb["遠部巧大"] == [{"direction": "引っ張り", "type": "ゴロ", "hit": False, "src": "app"}]
 
 
 def test_batted_balls_skips_missing_balltype():
