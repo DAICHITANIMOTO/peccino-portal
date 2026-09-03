@@ -108,6 +108,9 @@ def test_batting_logs_counts():
     tan = by_name["谷本大知"]
     assert (tan["pa"], tan["ab"], tan["h"], tan["double"], tan["hr"]) == (2, 2, 2, 1, 0)
     assert (tan["rbi"], tan["r"]) == (1, 1)
+    assert (tan["sb"], tan["cs"]) == (2, 1)
+    # タリーに sb/cs が無い選手は 0
+    assert (by_name["藤堂真雄"]["sb"], by_name["藤堂真雄"]["cs"]) == (0, 0)
     assert tan["number"] == "1"
     assert tan["is_roster_member"] is True
     assert tan["started"] == "先発"

@@ -298,12 +298,14 @@ def batting_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
         elif res == "失策出塁":
             row["error_reach"] += 1
 
-    # タリー(打点/得点/失策)を反映
+    # タリー(打点/得点/失策/盗塁/盗塁死)を反映
     for name, t in tally.items():
         row = rows.get(name) or ensure(name, 0, "", "途中")
         row["rbi"] = int(t.get("rbi", 0))
         row["r"] = int(t.get("run", 0))
         row["e"] = int(t.get("error", 0))
+        row["sb"] = int(t.get("sb", 0))
+        row["cs"] = int(t.get("cs", 0))
 
     return list(rows.values())
 

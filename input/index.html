@@ -530,7 +530,7 @@ function blankGame(){
     lineup: [], // {order, name, position}
     atBats: [], // {id, order, batter, inning, result, pos, ballType}
     defense: [], // {id, inning, result, fielder, ballType, runsAllowed}
-    tally: {}, // name -> {rbi, run, error}
+    tally: {}, // name -> {rbi, run, error, sb, cs}
     linescore: { self:{}, opp:{} }, // inning(number as string) -> runs
     subs: [], // {type, order, detail, from}
     state: { inning:1, half:"off", outs:0 },
@@ -607,8 +607,9 @@ async function sha256hex(str){
   return Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,"0");}).join("");
 }
 function tallyOf(name){
-  if(!G.tally[name]) G.tally[name] = {rbi:0, run:0, error:0};
-  return G.tally[name];
+  var t = G.tally[name] || (G.tally[name] = {});
+  ["rbi","run","error","sb","cs"].forEach(function(k){ if(t[k]==null) t[k] = 0; });
+  return t;
 }
 function tenPos(){ return G.info.firstAttack ? "表" : "裏"; } // 自チーム攻撃時の表裏
 
@@ -868,7 +869,8 @@ function renderTally(){
         + '<button class="plus" data-n="'+esc(row.name)+'" data-k="'+key+'" data-d="1">＋</button></div>';
     }
     return '<div class="tally-row"><span class="tname">'+row.order+'. '+esc(row.name)+'</span>'
-      + '<div class="tally-groups">' + grp("rbi","打点") + grp("run","得点") + grp("error","失策") + '</div></div>';
+      + '<div class="tally-groups">' + grp("rbi","打点") + grp("run","得点") + grp("error","失策")
+      + grp("sb","盗塁") + grp("cs","盗塁死") + '</div></div>';
   }).join("");
   $("tally-block").querySelectorAll("button").forEach(function(b){
     b.addEventListener("click", function(){
@@ -1223,11 +1225,13 @@ function buildText(g){
     });
     if(!groups.length) groups = [{ name:r.name, toks:[] }];
     groups.forEach(function(gr, gi){
-      var t = (g.tally && g.tally[gr.name]) || { rbi:0, run:0, error:0 };
+      var t = (g.tally && g.tally[gr.name]) || { rbi:0, run:0, error:0, sb:0, cs:0 };
       var ex = [];
       if(t.rbi) ex.push("打点"+t.rbi);
       if(t.run) ex.push("得点"+t.run);
       if(t.error) ex.push("失策"+t.error);
+      if(t.sb) ex.push("盗塁"+t.sb);
+      if(t.cs) ex.push("盗塁死"+t.cs);
       L.push((gi===0 ? String(r.order) : " ") + " " + padR(gr.name+" ",13)
         + (gr.toks.join(" ") || "-") + (ex.length ? ("   "+ex.join(" ")) : ""));
     });

@@ -32,7 +32,7 @@
     { "seq": 6, "inning": 2, "result": "アウト", "fielder": 3, "ballType": "ゴロ", "runsAllowed": 0 }
   ],
   "playerTally": {
-    "谷本大知": { "rbi": 1, "run": 1, "error": 0 },
+    "谷本大知": { "rbi": 1, "run": 1, "error": 0, "sb": 2, "cs": 1 },
     "藤堂真雄": { "rbi": 1, "run": 1, "error": 0 }
   },
   "linescore": { "self": [2, 0, 1, null, null, null, null], "opp": [1, 0, 0, null, null, null, null] },
