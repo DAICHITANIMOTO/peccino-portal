@@ -191,6 +191,36 @@ def test_pitching_logs_no_pitcher(capsys):
     assert "投手" in capsys.readouterr().err
 
 
+def test_pitching_logs_from_manual_table_takes_priority():
+    # 投手成績テーブル(紙のスコアシートに近い手入力)がある場合はそちらを正とし、
+    # 守備ログからの推測(古い方式)は使わない
+    sub = load_fixture("game_normal.json")
+    sub["pitchers"] = [
+        {"order": 1, "name": "中村駿", "outs": 7, "r": 1, "er": 1, "h": 3,
+         "hr": 0, "so": 5, "bb": 1, "hbp": 0, "wp": 1, "note": "立ち上がり不安定"},
+        {"order": 2, "name": "半井大稀", "outs": 2, "r": 2, "er": 0, "h": 1,
+         "hr": 1, "so": 0, "bb": 0, "hbp": 1, "wp": 0, "note": ""},
+    ]
+    roster = {"中村駿": "19", "半井大稀": "3"}
+    logs = ms.pitching_logs_from_submission(sub, roster)
+    assert [p["name"] for p in logs] == ["中村駿", "半井大稀"]
+    nak = logs[0]
+    assert nak["innings"] == round(7 / 3, 4)
+    assert (nak["r"], nak["er"], nak["h"], nak["so"], nak["bb"], nak["wp"]) == (1, 1, 3, 5, 1, 1)
+    han = logs[1]
+    assert (han["innings"], han["r"], han["er"], han["hr"], han["hbp"]) == (round(2 / 3, 4), 2, 0, 1, 1)
+    assert han["order"] == 2
+
+
+def test_pitching_logs_manual_table_blank_rows_fall_back_to_inference():
+    # 投手テーブルの行はあるが名前が未入力 → 実質「投手テーブル未入力」として扱い、
+    # 従来通り守備ログのイニングから推測する
+    sub = load_fixture("game_normal.json")
+    sub["pitchers"] = [{"order": 1, "name": "", "outs": 0}]
+    logs = ms.pitching_logs_from_submission(sub, {"中村駿": "19"})
+    assert len(logs) == 1 and logs[0]["name"] == "中村駿"
+
+
 def test_merge_adds_one_game():
     base = load_fixture("dataset_base_min.json")
     sub = load_fixture("game_normal.json")

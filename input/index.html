@@ -33,13 +33,17 @@
   input, select { font:inherit; }
   .shell { max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
   header {
-    position:sticky; top:0; z-index:5; padding:11px 14px;
+    position:sticky; top:0; z-index:5;
+    padding:max(11px, env(safe-area-inset-top)) 14px 11px;
     background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:8px;
   }
   header .title { font-size:14.5px; font-weight:700; }
-  header .sub { font-size:10.5px; color:var(--ink-faint); }
+  header .sub { font-size:10.5px; color:var(--ink-faint); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  header .hdr-left { min-width:0; }
+  header .hdr-right { display:flex; gap:6px; flex-shrink:0; }
   header .back { background:var(--surface-2); border:1px solid var(--line); border-radius:999px; font-size:11px; font-weight:700; padding:6px 12px; color:var(--ink-muted); }
+  header .home-btn { background:var(--surface-2); border:1px solid var(--line); border-radius:999px; font-size:14px; padding:6px 10px; color:var(--ink-muted); line-height:1; }
   main { flex:1; padding:14px; min-width:0; }
   .screen { display:none; }
   .screen.active { display:block; }
@@ -129,13 +133,25 @@
   .tally-row { padding:10px 12px; border-bottom:1px solid var(--line); }
   .tally-row:last-child { border-bottom:none; }
   .tally-row .tname { display:block; font-size:12.5px; font-weight:700; margin-bottom:7px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .tally-groups { display:flex; gap:8px; flex-wrap:wrap; }
-  .tally { display:flex; align-items:center; gap:5px; background:var(--surface-2); border-radius:999px; padding:3px 3px 3px 8px; }
-  .tally .tlabel { font-size:10px; color:var(--ink-faint); font-weight:700; }
+  .tally-groups { display:flex; gap:8px; flex-wrap:wrap; align-content:flex-start; }
+  .tally { display:flex; flex:0 0 auto; align-items:center; gap:5px; background:var(--surface-2); border-radius:999px; padding:3px 3px 3px 8px; white-space:nowrap; }
+  .tally .tlabel { font-size:10px; color:var(--ink-faint); font-weight:700; white-space:nowrap; }
   .tally .tval { font-family:'Oswald',sans-serif; font-weight:700; font-size:12px; min-width:12px; text-align:center; }
-  .tally button { width:20px; height:20px; border-radius:50%; background:var(--surface-raised); border:1px solid var(--line); font-weight:700; font-size:12px; line-height:1; }
+  .tally button { width:20px; height:20px; flex:0 0 auto; border-radius:50%; background:var(--surface-raised); border:1px solid var(--line); font-weight:700; font-size:12px; line-height:1; }
   .tally button.plus { color:var(--accent); }
   .tally button.minus { color:var(--ink-faint); }
+
+  /* --- 投手成績 --- */
+  .pitcher-block { margin-top:12px; }
+  .pitcher-row { padding:10px 12px; border-bottom:1px solid var(--line); }
+  .pitcher-row:last-child { border-bottom:none; }
+  .pitcher-row .prow-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:7px; }
+  .pitcher-row .pname { font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .pitcher-row .pdel { background:none; border:none; color:var(--ink-faint); font-size:16px; padding:2px 4px; flex-shrink:0; }
+  .pitcher-row .pnote { width:100%; margin-top:8px; padding:8px 10px; font-size:12px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--surface); color:var(--ink); }
+  .pitcher-add { display:flex; gap:8px; padding:10px 12px; align-items:center; }
+  .pitcher-add select { flex:1; min-width:0; }
+  .pitcher-add button { flex-shrink:0; background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--radius-sm); color:var(--ink-muted); font-weight:700; font-size:12.5px; padding:9px 14px; }
 
   /* --- 守備ログ --- */
   .play-log-item { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); }
@@ -197,11 +213,14 @@
 <body>
 <div class="shell">
   <header>
-    <div>
+    <div class="hdr-left">
       <div class="title">Peccino スコア入力</div>
       <div class="sub" id="hdr-sub">試合を設定してください</div>
     </div>
-    <button class="back" id="hdr-back" style="display:none">設定に戻る</button>
+    <div class="hdr-right">
+      <button class="back" id="hdr-back" style="display:none">設定に戻る</button>
+      <a class="home-btn" id="hdr-home" href="../" title="ポータルのトップに戻る">🏠</a>
+    </div>
   </header>
 
   <main>
@@ -310,6 +329,9 @@
 
       <!-- 守備ビュー -->
       <div id="view-def" style="display:none">
+        <h2 class="sec">投手成績</h2>
+        <div class="card pitcher-block" id="pitcher-block"></div>
+
         <h2 class="sec">相手の打席(結果＋自チームの守備処理)</h2>
         <div class="card"><div id="play-log"></div></div>
         <button class="add-play-btn" id="add-play-btn">＋ 次の打席を記録</button>
@@ -530,6 +552,7 @@ function blankGame(){
     lineup: [], // {order, name, position}
     atBats: [], // {id, order, batter, inning, result, pos, ballType}
     defense: [], // {id, inning, result, fielder, ballType, runsAllowed}
+    pitchers: [], // {id, name, outs, r, er, h, hr, so, bb, hbp, wp, note}
     tally: {}, // name -> {rbi, run, error, sb, cs}
     linescore: { self:{}, opp:{} }, // inning(number as string) -> runs
     subs: [], // {type, order, detail, from}
@@ -544,14 +567,19 @@ function save(){
     localStorage.setItem(GAME_KEY, JSON.stringify(G));
   }catch(e){}
 }
+function normalizeGame(g){
+  // 旧バージョンで保存された試合(投手成績が無い)を後方互換で補う
+  if(g && !Array.isArray(g.pitchers)) g.pitchers = [];
+  return g;
+}
 function load(){
   try{
     var s = localStorage.getItem(GAME_KEY);
-    if(s) return JSON.parse(s);
+    if(s) return normalizeGame(JSON.parse(s));
   }catch(e){}
   try{
     var p = localStorage.getItem(PREV_KEY);   // 本体が壊れていたら1つ前から復旧
-    if(p) return JSON.parse(p);
+    if(p) return normalizeGame(JSON.parse(p));
   }catch(e){}
   return null;
 }
@@ -879,10 +907,90 @@ function renderTally(){
       var nv = Math.max(0, t[k]+d);
       var actual = nv - t[k];
       t[k] = nv;
-      if(k==="run" && actual!==0){ addLinescore("self", G.state.inning, actual); }
-      renderTally(); renderLinescore(); save();
+      // 該当ピルの数値だけ書き換える(全体を作り直すとSafariでレイアウトが一瞬崩れることがあるため)
+      var pill = b.closest(".tally");
+      if(pill){ var vs = pill.querySelector(".tval"); if(vs) vs.textContent = nv; }
+      if(k==="run" && actual!==0){ addLinescore("self", G.state.inning, actual); renderLinescore(); }
+      save();
     });
   });
+}
+var PITCH_STAT_FIELDS = [["r","失点"],["er","自責点"],["h","被安打"],["hr","被本塁打"],
+  ["so","奪三振"],["bb","与四球"],["hbp","与死球"],["wp","暴投"]];
+function outsToText(outs){
+  outs = Math.max(0, outs||0);
+  var inn = Math.floor(outs/3), rem = outs%3;
+  return inn + "回" + (rem ? rem+"/3" : "");
+}
+function pitcherOf(id){ return G.pitchers.find(function(p){ return p.id===id; }); }
+function seedPitchers(){
+  if(G.pitchers.length) return;
+  var starter = G.lineup.find(function(r){ return r.position==="投手" && r.name; });
+  if(starter){
+    G.pitchers.push({ id:uid(), name:starter.name, outs:0, r:0, er:0, h:0, hr:0, so:0, bb:0, hbp:0, wp:0, note:"" });
+  }
+}
+function renderPitching(){
+  seedPitchers();
+  var wrap = $("pitcher-block");
+  var rows = G.pitchers.map(function(p, i){
+    var groups = '<div class="tally"><span class="tlabel">投球回</span><span class="tval">'+outsToText(p.outs)+'</span>'
+      + '<button class="minus" data-pid="'+p.id+'" data-k="outs" data-d="-1">−</button>'
+      + '<button class="plus" data-pid="'+p.id+'" data-k="outs" data-d="1">＋</button></div>';
+    groups += PITCH_STAT_FIELDS.map(function(f){
+      var key=f[0], label=f[1];
+      return '<div class="tally"><span class="tlabel">'+label+'</span><span class="tval">'+p[key]+'</span>'
+        + '<button class="minus" data-pid="'+p.id+'" data-k="'+key+'" data-d="-1">−</button>'
+        + '<button class="plus" data-pid="'+p.id+'" data-k="'+key+'" data-d="1">＋</button></div>';
+    }).join("");
+    return '<div class="pitcher-row">'
+      + '<div class="prow-head"><span class="pname">'+(i+1)+'. '+esc(p.name)+'</span>'
+      + (G.pitchers.length>1 ? '<button class="pdel" data-delp="'+p.id+'">×</button>' : '<span style="width:20px;flex-shrink:0"></span>')
+      + '</div>'
+      + '<div class="tally-groups">'+groups+'</div>'
+      + '<input class="pnote" data-note="'+p.id+'" placeholder="エラー・補足" value="'+esc(p.note||"")+'">'
+      + '</div>';
+  }).join("");
+  var benchForPitcher = PLAYER_NAMES.filter(function(n){ return !G.pitchers.some(function(p){ return p.name===n; }); });
+  wrap.innerHTML = rows + '<div class="pitcher-add">'
+    + '<select id="pitcher-add-select">' + optionList(benchForPitcher) + '</select>'
+    + '<button id="pitcher-add-btn">＋ 投手交代</button></div>';
+
+  wrap.querySelectorAll(".pitcher-row .tally button").forEach(function(b){
+    b.addEventListener("click", function(){
+      var p = pitcherOf(b.dataset.pid);
+      if(!p) return;
+      var k = b.dataset.k, d = +b.dataset.d;
+      p[k] = Math.max(0, (p[k]||0)+d);
+      var pill = b.closest(".tally");
+      if(pill){ var vs = pill.querySelector(".tval"); if(vs) vs.textContent = (k==="outs") ? outsToText(p.outs) : p[k]; }
+      save();
+    });
+  });
+  wrap.querySelectorAll(".pnote").forEach(function(inp){
+    inp.addEventListener("change", function(){
+      var p = pitcherOf(inp.dataset.note);
+      if(p){ p.note = inp.value; save(); }
+    });
+  });
+  wrap.querySelectorAll(".pdel").forEach(function(b){
+    b.addEventListener("click", function(){
+      if(!confirm("この投手の記録を削除しますか?")) return;
+      G.pitchers = G.pitchers.filter(function(p){ return p.id!==b.dataset.delp; });
+      renderPitching(); save();
+    });
+  });
+  var addBtn = $("pitcher-add-btn");
+  if(addBtn){
+    addBtn.addEventListener("click", function(){
+      var sel = $("pitcher-add-select");
+      var name = sel && sel.value;
+      if(!name){ toast("追加できる選手がいません"); return; }
+      G.pitchers.push({ id:uid(), name:name, outs:0, r:0, er:0, h:0, hr:0, so:0, bb:0, hbp:0, wp:0, note:"" });
+      renderPitching(); save();
+      toast(name+"を投手に追加しました");
+    });
+  }
 }
 function innMax(){
   var m = G.state.inning;
@@ -962,6 +1070,7 @@ function renderSheet(){
   renderLinescore();
   renderGrid();
   renderTally();
+  renderPitching();
   renderPlayLog();
   renderSubLog();
   renderUndoBar();
@@ -1178,6 +1287,10 @@ function exportFor(g){
     lineup:(g.lineup||[]).map(function(r){ return { order:r.order, name:r.name, position:r.position }; }),
     atBats:atBats, defense:defense,
     playerTally:g.tally||{},
+    pitchers:(g.pitchers||[]).map(function(p,i){
+      return { order:i+1, name:p.name, outs:p.outs||0, r:p.r||0, er:p.er||0, h:p.h||0, hr:p.hr||0,
+        so:p.so||0, bb:p.bb||0, hbp:p.hbp||0, wp:p.wp||0, note:p.note||"" };
+    }),
     linescore:{ self:lsArr("self"), opp:lsArr("opp") },
     substitutions:g.subs||[],
     finalState:{ inning:(g.state&&g.state.inning)||1 }
@@ -1237,6 +1350,24 @@ function buildText(g){
     });
   });
   L.push("");
+
+  if(d.pitchers.length){
+    L.push("■ 投手成績");
+    d.pitchers.forEach(function(p){
+      var ex = [];
+      if(p.r) ex.push("失点"+p.r);
+      if(p.er) ex.push("自責"+p.er);
+      if(p.h) ex.push("被安打"+p.h);
+      if(p.hr) ex.push("被本塁打"+p.hr);
+      if(p.so) ex.push("奪三振"+p.so);
+      if(p.bb) ex.push("与四球"+p.bb);
+      if(p.hbp) ex.push("与死球"+p.hbp);
+      if(p.wp) ex.push("暴投"+p.wp);
+      L.push(String(p.order) + " " + padR(p.name+" ",13) + padR(outsToText(p.outs)+" ",8)
+        + (ex.join(" ") || "-") + (p.note ? ("   ["+p.note+"]") : ""));
+    });
+    L.push("");
+  }
 
   if(d.defense.length){
     L.push("■ 守備(相手の打席)");
@@ -1371,6 +1502,10 @@ function gameFromExport(d){
     return { id:uid(), inning:p.inning||1, result:p.result, fielder:p.fielder, ballType:p.ballType, runsAllowed:p.runsAllowed||0 };
   });
   g.tally = d.playerTally || {};
+  g.pitchers = (d.pitchers||[]).map(function(p){
+    return { id:uid(), name:p.name, outs:p.outs||0, r:p.r||0, er:p.er||0, h:p.h||0, hr:p.hr||0,
+             so:p.so||0, bb:p.bb||0, hbp:p.hbp||0, wp:p.wp||0, note:p.note||"" };
+  });
   g.linescore = { self:{}, opp:{} };
   (d.linescore && d.linescore.self || []).forEach(function(v,i){ if(v!=null) g.linescore.self[i+1]=v; });
   (d.linescore && d.linescore.opp || []).forEach(function(v,i){ if(v!=null) g.linescore.opp[i+1]=v; });
@@ -1441,6 +1576,15 @@ async function deleteSentGame(id){
 /* ============ イベント束ね ============ */
 function bindSheet(){
   $("hdr-back").addEventListener("click", function(){ renderSetup(); show("setup"); });
+  $("hdr-home").addEventListener("click", function(e){
+    if(G && G.started){
+      e.preventDefault();
+      if(confirm("入力中のデータはこの端末に自動保存されています。\nポータルのトップに戻りますか？")){
+        location.href = $("hdr-home").getAttribute("href");
+      }
+    }
+    // 試合開始前(setup画面など)は確認なしでそのまま遷移
+  });
   $("undo-btn").addEventListener("click", undoLast);
 
   document.querySelectorAll(".half-btn").forEach(function(b){

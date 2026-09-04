@@ -365,8 +365,34 @@ def _blank_pitching(game_id: str, name: str, roster: dict, order: int) -> dict:
     return row
 
 
+MANUAL_PITCH_FIELDS = ("r", "er", "h", "hr", "so", "bb", "hbp", "wp")
+
+
+def pitching_logs_from_manual(sub: dict, roster: dict) -> list[dict]:
+    """入力アプリの「投手成績」テーブル(紙のスコアシートと同じ、行=投手・列=集計値)から
+    そのまま作る。投球回はアウト数(outs)を3で割って算出。自責点は与えられた値をそのまま使う
+    (失点との区別はスコアラーの入力次第)。"""
+    game_id = game_id_for(sub)
+    rows = []
+    for i, p in enumerate(sub.get("pitchers") or []):
+        name = str(p.get("name") or "").strip()
+        if not name:
+            continue
+        row = _blank_pitching(game_id, name, roster, int(p.get("order") or i + 1))
+        row["innings"] = round(int(p.get("outs", 0) or 0) / 3, 4)
+        for f in MANUAL_PITCH_FIELDS:
+            row[f] = int(p.get(f, 0) or 0)
+        rows.append(row)
+    return rows
+
+
 def pitching_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
     game_id = game_id_for(sub)
+    manual = pitching_logs_from_manual(sub, roster)
+    if manual:
+        return manual
+
+    # フォールバック: 投手テーブル未入力の古い送信データは守備ログのイニングから推測
     pbi = pitcher_by_inning(sub)
     if not any(pbi.values()):
         print(f"[warn] {game_id}: 投手が特定できないため pitching_logs を出力しません", file=sys.stderr)
