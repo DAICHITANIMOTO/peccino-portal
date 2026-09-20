@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-09-20T10:57:49.642Z",
+  "exportedAt": "2026-09-20T11:05:10.778Z",
   "game": {
     "date": "2026-09-19",
     "opponent": "GZ神戸",
@@ -394,7 +394,7 @@
     "中川裕翔": {
       "rbi": 1,
       "run": 0,
-      "error": 4,
+      "error": 3,
       "sb": 0,
       "cs": 0
     },
