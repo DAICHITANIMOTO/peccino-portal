@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-09-20T11:05:10.778Z",
+  "exportedAt": "2026-09-20T14:53:10.244Z",
   "game": {
     "date": "2026-09-19",
     "opponent": "GZ神戸",
@@ -440,7 +440,7 @@
     "self": [
       0,
       3,
-      6,
+      1,
       2,
       0,
       0,
