@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-10-04T14:46:36.819Z",
+  "exportedAt": "2026-10-05T04:33:55.456Z",
   "game": {
     "date": "2026-10-03",
     "opponent": "Six o'clock",
@@ -642,26 +642,28 @@
   ],
   "linescore": {
     "self": [
-      8,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null
+      3,
+      2,
+      0,
+      1,
+      0,
+      2,
+      4,
+      1
     ],
     "opp": [
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
+      0,
+      1,
+      0,
+      0,
+      1,
+      6,
+      0,
       null
     ]
   },
   "substitutions": [],
   "finalState": {
-    "inning": 1
+    "inning": 8
   }
 }
