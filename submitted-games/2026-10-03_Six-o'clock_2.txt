@@ -3,8 +3,8 @@ Peccino 試合記録
 記録:将軍 / 先攻
 
 ■ スコア  ○ 勝ち
-Peccino     8  = 8
-Six o'clock -  = 0
+Peccino     3 2 0 1 0 2 4 1  = 13
+Six o'clock 0 1 0 0 1 6 0 -  = 8
 
 ■ 打撃
 1 Yuki         四球 8安飛 死球 6安ゴ   得点1
