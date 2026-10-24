@@ -30,7 +30,9 @@
     -webkit-font-smoothing:antialiased; overscroll-behavior-y:none;
   }
   button { font:inherit; color:inherit; cursor:pointer; }
-  input, select { font:inherit; }
+  input, select, textarea { font:inherit; }
+  /* iPhone は 16px 未満の入力欄をタップすると画面が勝手に拡大されるので、入力欄は 16px に揃える */
+  input.field, select.field-select, textarea.field { font-size:16px; }
   .shell { max-width:520px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; }
   header {
     position:sticky; top:0; z-index:5;
@@ -100,7 +102,9 @@
   table.linescore th { background:var(--surface-2); color:var(--ink-muted); font-size:10px; padding:5px 3px; }
   table.linescore td.team, table.linescore th.team { text-align:left; font-family:inherit; font-weight:700; padding:5px 8px; white-space:nowrap; position:sticky; left:0; background:var(--surface); }
   table.linescore td.total, table.linescore th.total { font-weight:700; color:var(--accent); border-left:2px solid var(--line); }
-  table.linescore td.cell button { width:100%; height:100%; min-height:30px; background:none; border:none; font-family:'Oswald',sans-serif; font-size:13px; font-weight:700; color:var(--ink); }
+  table.linescore td.cell input { display:block; width:100%; min-width:32px; height:36px; padding:0; margin:0; background:none; border:none; border-radius:0; text-align:center; font-family:'Oswald',sans-serif; font-size:16px; font-weight:700; color:var(--ink); -webkit-appearance:none; appearance:none; }
+  table.linescore td.cell input:focus { outline:2px solid var(--accent); outline-offset:-2px; background:color-mix(in srgb, var(--accent) 10%, transparent); }
+  table.linescore td.cell input::placeholder { color:var(--ink-faint); font-weight:400; }
   table.linescore td.cell.cur { background:color-mix(in srgb, var(--accent) 12%, transparent); }
   .ls-hint { font-size:9.5px; color:var(--ink-faint); margin-bottom:12px; }
 
@@ -149,6 +153,13 @@
   .pitcher-row .pname { font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pitcher-row .pdel { background:none; border:none; color:var(--ink-faint); font-size:16px; padding:2px 4px; flex-shrink:0; }
   .pitcher-row .pnote { width:100%; margin-top:8px; padding:8px 10px; font-size:12px; border-radius:var(--radius-sm); border:1px solid var(--line); background:var(--surface); color:var(--ink); }
+  .dec-group { display:flex; gap:4px; align-items:center; margin-left:auto; margin-right:4px; }
+  .dec-btn { min-width:30px; height:28px; padding:0 6px; border-radius:8px; background:var(--surface-2); border:1px solid var(--line); font-weight:700; font-size:12px; color:var(--ink-faint); }
+  .dec-btn.sel[data-dec="勝"] { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+  .dec-btn.sel[data-dec="負"] { background:var(--lose); border-color:var(--lose); color:#fff; }
+  .dec-btn.sel[data-dec="S"] { background:var(--sky); border-color:var(--sky); color:#06170E; }
+  .dec-btn.sel[data-dec="H"] { background:var(--amber); border-color:var(--amber); color:#2a1a00; }
+  .tally input.np-input { width:52px; height:26px; border-radius:999px; border:1px solid var(--line); background:var(--surface-raised); color:var(--ink); text-align:center; font-family:'Oswald',sans-serif; font-weight:700; font-size:16px; padding:0 4px; }
   .pitcher-add { display:flex; gap:8px; padding:10px 12px; align-items:center; }
   .pitcher-add select { flex:1; min-width:0; }
   .pitcher-add button { flex-shrink:0; background:var(--surface-2); border:1px dashed var(--line); border-radius:var(--radius-sm); color:var(--ink-muted); font-weight:700; font-size:12.5px; padding:9px 14px; }
@@ -173,6 +184,30 @@
   .archive-row .ainfo .ameta { display:block; font-size:10px; color:var(--ink-faint); margin-top:2px; }
   .archive-row .acopy { background:var(--surface-2); border:1px solid var(--line); color:var(--accent); font-weight:700; font-size:11px; padding:6px 10px; border-radius:999px; flex-shrink:0; }
   .archive-row .adel { background:none; border:none; color:var(--ink-faint); font-size:11px; font-weight:700; padding:6px 4px; flex-shrink:0; }
+
+  /* --- 選手名簿 --- */
+  .roster-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); width:100%; background:none; border-left:none; border-right:none; border-top:none; text-align:left; }
+  .roster-row:last-child { border-bottom:none; }
+  .roster-row .rnum { width:30px; height:30px; border-radius:8px; background:var(--surface-2); color:var(--accent); font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; display:grid; place-items:center; flex-shrink:0; }
+  .roster-row .rinfo { flex:1; min-width:0; }
+  .roster-row .rname { display:block; font-size:13px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .roster-row .rmeta { display:block; font-size:10.5px; color:var(--ink-faint); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .roster-row .rgo { color:var(--ink-faint); font-size:14px; flex-shrink:0; }
+  .badge-new { font-size:9.5px; font-weight:700; color:var(--accent-ink); background:var(--accent); border-radius:4px; padding:1px 5px; margin-left:4px; vertical-align:1px; }
+  .sync-line { font-size:11px; line-height:1.6; padding:8px 10px; border-radius:var(--radius-sm); margin-bottom:10px; background:var(--surface); border:1px solid var(--line); color:var(--ink-muted); }
+  .sync-line.warn { border-color:color-mix(in srgb, var(--amber) 60%, var(--line)); color:var(--amber); }
+  .sync-line button { background:none; border:none; color:var(--accent); font-weight:700; font-size:11px; padding:0 0 0 6px; }
+  textarea.field { resize:vertical; line-height:1.6; }
+
+  /* --- 送信前チェック --- */
+  .check-list { list-style:none; margin:10px 0 0; padding:0; font-size:12px; line-height:1.55; }
+  .check-list li { display:flex; gap:7px; padding:5px 0; border-top:1px dashed var(--line); }
+  .check-list li:first-child { border-top:none; }
+  .check-list li .ic { flex-shrink:0; width:16px; text-align:center; font-weight:700; }
+  .check-list li.ok .ic { color:var(--accent); }
+  .check-list li.warn .ic { color:var(--amber); }
+  .check-list li.warn { color:var(--ink); }
+  .check-list li.ok { color:var(--ink-muted); }
 
   .footer-bar {
     position:sticky; bottom:0; padding:10px 14px max(12px, env(safe-area-inset-bottom));
@@ -263,9 +298,18 @@
           </div>
         </div>
         <label class="field-label">対戦相手</label>
-        <input class="field" type="text" id="set-opponent" placeholder="例: 神戸グフ">
+        <input class="field" type="text" id="set-opponent" placeholder="例: 神戸グフ（候補から選べます）" list="opp-list" autocomplete="off">
+        <datalist id="opp-list"></datalist>
+        <label class="field-label">球場</label>
+        <input class="field" type="text" id="set-place" placeholder="例: 名谷公園野球場" list="place-list" autocomplete="off">
+        <datalist id="place-list"></datalist>
         <div class="row2">
-          <div><label class="field-label">球場</label><input class="field" type="text" id="set-place" placeholder="例: 名谷公園野球場"></div>
+          <div><label class="field-label">試合区分</label>
+            <select class="field-select" id="set-category">
+              <option value="練習試合">練習試合</option>
+              <option value="公式戦">リーグ戦（公式戦）</option>
+            </select>
+          </div>
           <div><label class="field-label">この日の試合番号</label>
             <select class="field-select" id="set-gameno">
               <option value="1">1試合目</option>
@@ -278,7 +322,7 @@
 
       <button class="ghost-btn" id="edit-sent-btn" style="margin-top:10px">☁️ 送信済みの試合を修正／取り消し</button>
 
-      <h2 class="sec">打順・守備(自チーム)</h2>
+      <h2 class="sec">打順・守備(自チーム)<button class="link-btn" id="open-roster-btn" style="color:var(--accent);background:none;border:none;font-weight:700;font-size:11px;text-transform:none;letter-spacing:0">👥 選手名簿の追加・編集 →</button></h2>
       <div class="card" id="lineup-card"></div>
       <button class="add-row-btn" id="add-lineup-btn">＋ 打順を追加(控え・代打も)</button>
       <div class="note" style="margin-top:10px">相手チームの選手個別登録は不要です。相手の打席は「結果」＋「自チームの誰が処理したか」だけ記録します。</div>
@@ -311,7 +355,7 @@
       </div>
 
       <div class="score-wrap"><table class="linescore" id="linescore"></table></div>
-      <div class="ls-hint">↑ セルをタップで +1 / 長押しで −1(手動修正用)。太字の列が現在のイニング</div>
+      <div class="ls-hint">↑ マスをタップして得点を数字で入力（空欄＝まだ入力なし）。下の「得点・打点」とは連動しません。色付きの列が現在のイニング</div>
 
       <div class="undo-bar">
         <button class="undo-btn" id="undo-btn" disabled>↩ <span id="undo-label">取り消せる操作はありません</span></button>
@@ -346,6 +390,7 @@
       <h2 class="sec">試合終了 — サイトへ反映</h2>
       <div class="card" style="padding:12px">
         <div id="export-summary" style="font-size:12.5px;line-height:1.7"></div>
+        <ul class="check-list" id="export-checks"></ul>
         <button class="primary-btn" id="send-btn">🚀 サイトに送信</button>
         <div id="send-status" style="font-size:11.5px;line-height:1.6;margin-top:8px;min-height:16px"></div>
       </div>
@@ -364,6 +409,18 @@
       </div>
       <button class="ghost-btn" id="back-to-sheet-btn">← まだ入力を続ける</button>
       <button class="danger-btn" id="new-game-btn">この試合を完了 → 新しい試合を始める</button>
+    </section>
+
+    <!-- 5. 選手名簿 -->
+    <section class="screen" id="screen-roster">
+      <div class="note">ここで追加・編集した選手は、入力アプリの選手リストと、サイトの選手一覧・選手ページ（プロフィール）に数分で反映されます。teams.one を使わなくても選手の管理ができます。</div>
+      <div class="sync-line" id="roster-sync"></div>
+      <button class="primary-btn" id="roster-add-btn" style="margin-top:0">＋ 新しい選手を追加</button>
+      <h2 class="sec">在籍メンバー<span id="roster-count" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--ink-faint)"></span></h2>
+      <div class="card" id="roster-list"></div>
+      <h2 class="sec" id="roster-retired-head">退団・OB（試合の選手リストには出ません）</h2>
+      <div class="card" id="roster-retired"></div>
+      <button class="ghost-btn" id="roster-back-btn">← 設定に戻る</button>
     </section>
 
     <!-- 4. 送信済みの試合を修正 -->
@@ -409,11 +466,13 @@
     <div class="step-label">③ 結果</div>
     <div class="btn-grid" id="off-result">
       <button class="opt-btn out-type" data-r="アウト">アウト</button>
+      <button class="opt-btn out-type" data-r="併殺打">併殺打</button>
+      <button class="opt-btn" data-r="失策出塁">相手失策</button>
       <button class="opt-btn" data-r="単打">単打</button>
+      <button class="opt-btn" data-r="内野安打">内野安打</button>
       <button class="opt-btn" data-r="二塁打">二塁打</button>
       <button class="opt-btn" data-r="三塁打">三塁打</button>
       <button class="opt-btn" data-r="本塁打">本塁打</button>
-      <button class="opt-btn" data-r="失策出塁">相手失策</button>
     </div>
 
     <button class="primary-btn save-btn" id="off-save">保存</button>
@@ -445,12 +504,13 @@
       <button class="opt-btn" data-t="内野フライ">内野<br>フライ</button>
     </div>
     <div class="step-label">③ 結果</div>
-    <div class="btn-grid" id="def-result">
+    <div class="btn-grid cols-4" id="def-result">
       <button class="opt-btn out-type" data-r="アウト">アウト</button>
+      <button class="opt-btn out-type" data-r="併殺">併殺</button>
       <button class="opt-btn" data-r="安打">安打</button>
-      <button class="opt-btn" data-r="失策">自チーム失策</button>
+      <button class="opt-btn" data-r="失策">自チーム<br>失策</button>
     </div>
-    <div class="step-label">この打席での失点</div>
+    <div class="step-label">この打席での失点（メモ用。スコアボードには自動で足しません）</div>
     <div class="btn-grid cols-5" id="def-runs">
       <button class="opt-btn sel" data-run="0">0</button>
       <button class="opt-btn" data-run="1">1</button>
@@ -492,6 +552,42 @@
   </div>
 </div>
 
+<!-- 選手の追加・編集モーダル -->
+<div class="sheet-modal" id="roster-modal">
+  <div class="sheet-body">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="rm-title">選手を編集</div>
+    <div class="row2" style="grid-template-columns:1fr 92px">
+      <div><label class="field-label">名前</label><input class="field" type="text" id="rm-name" autocomplete="off"></div>
+      <div><label class="field-label">背番号</label><input class="field" type="text" id="rm-number" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off"></div>
+    </div>
+    <div style="font-size:10.5px;color:var(--ink-faint);margin-top:4px;line-height:1.5" id="rm-name-note"></div>
+    <div class="row2">
+      <div><label class="field-label">ポジション</label>
+        <select class="field-select" id="rm-position">
+          <option>投手</option><option>捕手</option><option>内野手</option><option>外野手</option><option value="スタッフ（選手以外）">スタッフ（記録員・マネージャー等）</option>
+        </select></div>
+      <div><label class="field-label">サブポジション（任意）</label><input class="field" type="text" id="rm-subpos" placeholder="例: 外野手 / 投手" autocomplete="off"></div>
+    </div>
+    <div class="row2">
+      <div><label class="field-label">投げ</label><select class="field-select" id="rm-throws"><option>右</option><option>左</option></select></div>
+      <div><label class="field-label">打ち</label><select class="field-select" id="rm-bats"><option>右</option><option>左</option><option>両</option></select></div>
+    </div>
+    <div class="row2" style="grid-template-columns:92px 1fr">
+      <div><label class="field-label">年齢（任意）</label><input class="field" type="text" id="rm-age" inputmode="numeric" pattern="[0-9]*" maxlength="3" autocomplete="off"></div>
+      <div><label class="field-label">役職・入団年度</label><input class="field" type="text" id="rm-role" placeholder="例: キャプテン / 2026年度入団" autocomplete="off"></div>
+    </div>
+    <label class="field-label">経歴（任意）</label>
+    <input class="field" type="text" id="rm-career" placeholder="例: 〇〇高校 野球部" autocomplete="off">
+    <label class="field-label">紹介文（サイトの選手ページに表示）</label>
+    <textarea class="field" id="rm-pr" rows="4" placeholder="プレースタイル・意気込み・受賞歴など"></textarea>
+    <button class="primary-btn save-btn" id="rm-save">保存してサイトに反映</button>
+    <button class="ghost-btn" id="rm-retire">退団にする（選手リストから外す）</button>
+    <button class="danger-btn" id="rm-delete" style="display:none">この選手を完全に削除</button>
+    <button class="ghost-btn" id="rm-cancel">キャンセル</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -510,23 +606,19 @@ var WORKER_URL = "https://peccino-submit.daichitanimoto0403.workers.dev";
 var GH_OWNER_REPO = "DAICHITANIMOTO/peccino-portal";
 var authSecret = null; // 今セッションで入力された合言葉(送信の secret に使う。localStorage には保存しない)
 
-// 選手名鑑(2026-08-28 dataset.jsonより。スタッフは記録者候補にのみ使用)
-var ROSTER = [
-  {n:"1",name:"谷本大知",pos:"内野手"},{n:"2",name:"藤堂真雄",pos:"外野手"},{n:"3",name:"半井大稀",pos:"外野手"},
-  {n:"4",name:"遠部巧大",pos:"内野手"},{n:"5",name:"榊原健斗",pos:"外野手"},{n:"6",name:"Yuito",pos:"外野手"},
-  {n:"7",name:"福田龍之介",pos:"内野手"},{n:"8",name:"末光弘明",pos:"投手"},{n:"9",name:"薮中竜也",pos:"内野手"},
-  {n:"11",name:"新垣雄大",pos:"外野手"},{n:"12",name:"迫",pos:"内野手"},{n:"16",name:"渕端凌大",pos:"捕手"},
-  {n:"18",name:"藤原湧",pos:"投手"},{n:"19",name:"中村駿",pos:"投手"},{n:"21",name:"尾上諒太朗",pos:"捕手"},
-  {n:"23",name:"大川滉平",pos:"外野手"},{n:"24",name:"藤原巧翔",pos:"捕手"},{n:"25",name:"登内春樹",pos:"捕手"},
-  {n:"28",name:"木下翔太",pos:"外野手"},{n:"34",name:"京峯翼",pos:"内野手"},{n:"38",name:"小山",pos:"投手"},
-  {n:"41",name:"森本耀介",pos:"外野手"},{n:"42",name:"鬼頭亮太郎",pos:"捕手"},{n:"46",name:"Yuki",pos:"外野手"},
-  {n:"47",name:"中川裕翔",pos:"捕手"},{n:"56",name:"菅村明良",pos:"内野手"},{n:"61",name:"西村",pos:"外野手"},
-  {n:"65",name:"石原",pos:"投手"},{n:"66",name:"寺崎陸",pos:"外野手"},{n:"77",name:"大西健斗",pos:"内野手"},
-  {n:"81",name:"Reo",pos:"外野手"},{n:"99",name:"新宮直希",pos:"内野手"}
-];
-var STAFF = ["将軍","ふうか","ななこ","あんな"];
-var PLAYER_NAMES = ROSTER.map(function(p){return p.name;});
-var RECORDER_NAMES = STAFF.concat(PLAYER_NAMES);
+// 選手名簿の初期値(2026-10-24 dataset.json より。プロフィール込み)。
+// 追加・編集・退団は「選手名簿」画面から行い、submitted-games/0000-00-00_roster.json に保存される(サイトにも反映)。
+var ROSTER_BASE = [{"key": "谷本大知", "name": "谷本大知", "number": "1", "position": "内野手", "sub_position": "投手", "throws": "右", "bats": "右", "age": "24", "role_and_join_year": "2024年度入団", "career": "", "pr": "チーム創設メンバーの1人。\n狙い球を確実に捉え、得点に繋げるチームの顔。類い稀な野球センスで何でもそつなくこなすクールボーイ。1年間堅実にサードを守り、初のゴールデングラブ賞を狙う。\n最優秀選手賞(24)、最多打点(24)、最多本塁打(24)、記録員賞(25)"}, {"key": "藤堂真雄", "name": "藤堂真雄", "number": "2", "position": "外野手", "sub_position": "", "throws": "右", "bats": "両", "age": "28", "role_and_join_year": "2024年度入団", "career": "", "pr": ""}, {"key": "半井大稀", "name": "半井大稀", "number": "3", "position": "外野手", "sub_position": "内野手", "throws": "右", "bats": "右", "age": "31", "role_and_join_year": "2024年度入団", "career": "", "pr": "チーム創設メンバーの一人。\n彼が打てばベンチはいつもお祭り騒ぎ。三振してもエラーしても憎めない、大山譲りの人柄の良さ。去年は打撃の成長も見られ打撃面でも大山のようになって欲しいと期待がかかる。ベンチを鼓舞する雄叫びを、ここ一番で魅せてほしい。"}, {"key": "遠部巧大", "name": "遠部巧大", "number": "4", "position": "内野手", "sub_position": "", "throws": "右", "bats": "右", "age": "23", "role_and_join_year": "キャプテン / 2024年度入団", "career": "", "pr": "チーム創設メンバーの1人。\n2025年守備率.943を記録した絶対的遊撃手。打撃でも4冠を獲得。キャプテン2年目となる今季は、攻守にわたり更なる飛躍を果たし、怪我なくフィールドに立ち続ける。\n最優秀選手賞(25)、優秀選手賞(24)、ゴールデングラブ賞(24,25)、首位打者(25)、最多安打(25)、最多本塁打(25)、最多打点(25)"}, {"key": "榊原健斗", "name": "榊原健斗", "number": "5", "position": "外野手", "sub_position": "内野手", "throws": "左", "bats": "左", "age": "29", "role_and_join_year": "オーナー / 監督 / 2024年度入団", "career": "", "pr": "チームの創設者。監督としてチームのいい雰囲気を作ることを心がけている。\nプレイヤーとしてはファースト外野をこなし、打者としては超積極的にアプローチする。春先の調子の良さをキープ出来るかが鍵となっている。夢の柵越ホームランは近い。\nマネージャー賞(24,25)"}, {"key": "Yuito", "name": "Yuito", "number": "6", "position": "外野手", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2024年度入団", "career": "", "pr": ""}, {"key": "福田龍之介", "name": "福田龍之介", "number": "7", "position": "内野手", "sub_position": "投手 / 捕手 / 外野手", "throws": "右", "bats": "左", "age": "24", "role_and_join_year": "2024年度入団", "career": "", "pr": "走攻守すべてをそつなくこなすチームに欠かせない万能選手。バスケ部出身ながらその秘めた才能を開花させている。打席でも守備でもフィールドを駆け回り、背番号7を輝かせてほしい。\n優秀選手賞(25)、最多盗塁(25)、ゴールデングラブ賞(25)"}, {"key": "末光弘明", "name": "末光弘明", "number": "8", "position": "投手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2024年度入団", "career": "", "pr": "走攻守においてブレのない、非常に安定感のある選手。特に外野守備では頭一つ抜けている。去就にも注目が集まるが、愛着あるチームのため今年も神戸の地でプレーしてほしい。\nゴールデングラブ賞(25)"}, {"key": "薮中竜也", "name": "薮中竜也", "number": "9", "position": "内野手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "26", "role_and_join_year": "2025年度入団", "career": "", "pr": "遠くはるばるやってきた新星。\nまだ未知数だが数年ぶりの野球で活躍できるのだろうか。\nポテンシャルが高いのは事実。そこを発揮しきってPeccinoの救世主となれ。"}, {"key": "新垣雄大", "name": "新垣雄大", "number": "11", "position": "外野手", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2026年度入団", "career": "", "pr": ""}, {"key": "迫", "name": "迫", "number": "12", "position": "内野手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2025年度入団", "career": "", "pr": "思い切りの良いスイングが魅力の最年少野手。内外野を卒なくこなし、出場機会増を狙う。"}, {"key": "渕端凌大", "name": "渕端凌大", "number": "16", "position": "捕手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "27", "role_and_join_year": "2024年度入団", "career": "", "pr": "全ての項目において突出した数値を残す右の大砲。特にリーグ戦での打率は.636など大舞台に強い。持ち前のバッティング能力を武器に、タイトル奪取となるか。\n優秀選手賞(24)、首位打者(24)、最高出塁率(24)"}, {"key": "藤原湧", "name": "藤原湧", "number": "18", "position": "投手", "sub_position": "外野手", "throws": "右", "bats": "両", "age": "26", "role_and_join_year": "2024年度入団", "career": "", "pr": "チームトップの被打球管理能力を誇る右腕。昨季は球速・奪三振率が向上するなど飛躍の年となった。今年は中村とともに、投手陣を牽引していってほしい。\n最多勝(24)、ゴールデングラブ賞(24)"}, {"key": "中村駿", "name": "中村駿", "number": "19", "position": "投手", "sub_position": "内野手 / 外野手", "throws": "右", "bats": "左", "age": "21", "role_and_join_year": "2024年度入団", "career": "", "pr": "Peccino最強投手。別名キャッチャー粉砕マン。打者としても完成度が高く、ライトスタンドに放り込む力も持っている。今年は2桁の期待が高いが、果たして。\n優秀選手賞(25)、最多勝(25)、最優秀防御率(24,25)、最多奪三振(24,25)"}, {"key": "尾上諒太朗", "name": "尾上諒太朗", "number": "21", "position": "捕手", "sub_position": "投手", "throws": "右", "bats": "両", "age": "21", "role_and_join_year": "2024年度入団", "career": "", "pr": ""}, {"key": "大川滉平", "name": "大川滉平", "number": "23", "position": "外野手", "sub_position": "内野手", "throws": "右", "bats": "右", "age": "25", "role_and_join_year": "2026年度入団", "career": "", "pr": "名門出身の新星。アジリティのある守備でハッスルプレーが持ち味。高評価のハンドリングを武器に内野守備のオプションも付けていきたいところ。打撃では鋭いスイングで憧れ如く長打量産に期待。"}, {"key": "藤原巧翔", "name": "藤原巧翔", "number": "24", "position": "捕手", "sub_position": "", "throws": "右", "bats": "右", "age": "23", "role_and_join_year": "2026年度入団", "career": "", "pr": "投手陣から絶賛されるインサイドワーク、努力に裏打ちされた打球速度が魅力の新戦力。今期チームに不足しているゲームチェンジャーになって欲しい。"}, {"key": "登内春樹", "name": "登内春樹", "number": "25", "position": "捕手", "sub_position": "内野手", "throws": "右", "bats": "右", "age": "20", "role_and_join_year": "2024年度入団", "career": "", "pr": "帰ってきた捕手。ブロッキング、キャッチング、スローイング技術どれを見ても高い技術を持っている。選球眼が良く出塁できるバッター。野球勘を取り戻し安打の量産にも期待がかかる。"}, {"key": "木下翔太", "name": "木下翔太", "number": "28", "position": "外野手", "sub_position": "", "throws": "右", "bats": "右", "age": "30", "role_and_join_year": "2025年度入団", "career": "", "pr": "野球熱が非常に高く、日々の成長が目覚ましい努力家。昨季は全試合右翼手としてスタメン出場し、強肩を活かしたプレーでベンチを沸かせた。打撃フォームの研究にも妥協を許さず、真の長距離砲になる日は近いだろう。"}, {"key": "京峯翼", "name": "京峯翼", "number": "34", "position": "内野手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "27", "role_and_join_year": "2026年度入団", "career": "", "pr": "鍛えられた脚力で快足飛ばすスプリンター。\n本職は内野だが外野でも広い守備範囲を持ちチーム戦略の柔軟性に大きく貢献。\n力強い打撃が徐々に発揮されており、二塁打を量産するスプレーヒッターに期待。"}, {"key": "小山", "name": "小山", "number": "38", "position": "投手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2025年度入団", "career": "", "pr": ""}, {"key": "森本耀介", "name": "森本耀介", "number": "41", "position": "外野手", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2026年度入団", "career": "", "pr": ""}, {"key": "鬼頭亮太郎", "name": "鬼頭亮太郎", "number": "42", "position": "捕手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "25", "role_and_join_year": "2024年度入団", "career": "", "pr": "チームの盛り上げ役。常に全力プレーの扇の要。打撃では昨シーズン後半戦から長打力が開花。新たな相棒と共に、今年は何本のアーチを描けるか。\nゴールデングラブ賞(24)、マネージャー賞(24)"}, {"key": "Yuki", "name": "Yuki", "number": "46", "position": "外野手", "sub_position": "", "throws": "右", "bats": "右", "age": "17", "role_and_join_year": "", "career": "2024年度入団", "pr": "Peccino最年少外野手。\n年々守備力の向上も見られ日々成長している。\n打撃面では非常に雰囲気のあるバッター。雰囲気だけになるのか今後の成長に非常に期待がかかる。"}, {"key": "中川裕翔", "name": "中川裕翔", "number": "47", "position": "捕手", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2026年度入団", "career": "", "pr": ""}, {"key": "菅村明良", "name": "菅村明良", "number": "56", "position": "内野手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "26", "role_and_join_year": "2024年度入団", "career": "", "pr": "積極性と堅実な守備が持ち味。どのポジションでも高い守備率を誇るため、安心して任せられる。今季は持ち前の勝負強さを発揮し、大舞台での活躍に期待したい。"}, {"key": "西村", "name": "西村", "number": "61", "position": "外野手", "sub_position": "内野手", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2024年度入団", "career": "", "pr": ""}, {"key": "石原", "name": "石原", "number": "65", "position": "投手", "sub_position": "内野手", "throws": "右", "bats": "右", "age": "17", "role_and_join_year": "2024年度入団", "career": "", "pr": "高校生ながら昨季351球を投げ抜いたチーム最年少投手。リーグ戦出場を目指し頑張ってほしい。"}, {"key": "寺崎陸", "name": "寺崎陸", "number": "66", "position": "外野手", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2026年度入団", "career": "", "pr": ""}, {"key": "将軍", "name": "将軍", "number": "72", "position": "スタッフ（選手以外）", "sub_position": "", "throws": "右", "bats": "右", "age": "498", "role_and_join_year": "会計 / ヘッドコーチ/記録員/2024年度入団", "career": "", "pr": "Peccinoを支える草野球界NO.1の情報屋。監督とは小学校からの付き合いで唯一の同学年であるため、監督の右腕としてチームを勝利に導きたい。最近は打席に立つ姿も時折見られ、待望の一本に期待がかかる。\nマネージャー賞(25)"}, {"key": "大西健斗", "name": "大西健斗", "number": "77", "position": "内野手", "sub_position": "投手", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2026年度入団", "career": "", "pr": "高いWhiff Rateと破綻しないコントロールを有するスタータープロスペクト。\nリーグ戦でも高出力のパフォーマンスで上々のデビューを飾った。\nイニングを伸ばしながら徐々に評価を上げていきたい。設定6を引きに行く。"}, {"key": "Reo", "name": "Reo", "number": "81", "position": "外野手", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2024年度入団", "career": "", "pr": ""}, {"key": "新宮直希", "name": "新宮直希", "number": "99", "position": "内野手", "sub_position": "外野手", "throws": "右", "bats": "右", "age": "27", "role_and_join_year": "2024年度入団", "career": "", "pr": "Peccinoの愛されしいじられキャラ。\nその反面打撃では何かを起こしてくれる頼れる存在。だがすぐ調子に乗るので結局あまり褒められない。\n真の強打者になる日は来るのだろうか。"}, {"key": "ふうか", "name": "ふうか", "number": "103", "position": "スタッフ（選手以外）", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2025年度入団", "career": "", "pr": ""}, {"key": "ななこ", "name": "ななこ", "number": "104", "position": "スタッフ（選手以外）", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2025年度入団", "career": "", "pr": ""}, {"key": "あんな", "name": "あんな", "number": "106", "position": "スタッフ（選手以外）", "sub_position": "", "throws": "右", "bats": "右", "age": "", "role_and_join_year": "2026年度入団", "career": "", "pr": ""}];
+var ROSTER_KEY = "peccino_input_roster_v1";   // 端末内の名簿キャッシュ {updatedAt, players, pending}
+var ROSTER_ID = "0000-00-00_roster";          // 送信 Worker の id 形式(YYYY-MM-DD_xxx)に合わせた名簿ファイル名
+var STAFF_POS = "スタッフ（選手以外）";
+var rosterDoc = null;                          // 現在の名簿
+var rosterRemote = "loading";                  // loading | ok | none | error
+var PLAYER_NAMES = [], RECORDER_NAMES = [];
+
+// 過去の対戦相手・球場(表記ゆれ防止の候補。新しい順)
+var KNOWN_OPPONENTS = ["ロボコンズ", "藻川アルバトロス", "KYJ", "Six o'clock", "GZ神戸", "ビギナーズ", "神戸グフ", "神戸ブレイザーズ", "KOBE NEXUS", "グッドモーニングズ", "神戸フリーマンズ", "bulls awaji", "タイガース", "神戸Good Boys", "ノラキャッツ", "TOMO GREEN", "ロマンチックス", "Actors", "Leopard", "夢野サンテファベーラ", "ファンキージャンクファイブ(FJ5)", "大阪閃光", "西宮シャドウズ", "ピーナッツ", "プレジャー", "生田デイバイデイズ", "神戸ベースボールクラブ", "ちゃんちゃらーズ", "Felsiners", "ファイザーズ", "疾風", "bull base", "ミシュマシュマローズ", "有馬スイートピー", "ウィーラーズ", "協和フリースタイル", "BIG LIARZ", "COLORAMISTA B.C.", "Vanquish", "PEACE", "hodgepodge", "ボネるんズ", "B&C"];
+var KNOWN_PLACES = ["ほっともっと", "瀬戸公園野球場", "大倉山公園野球場", "名谷公園野球場", "G7スタジアム", "本多聞南公園野球場", "深江浜公園野球場", "浜甲子園C野球場", "魚崎浜公園野球場", "津門中央公園 野球場", "G7スタジアム神戸", "天王ダムスポーツガーデン野球場", "ほっともっとフィールド神戸", "天王ダム野球場", "浜甲子園運動公園 軟式野球場", "鳴尾浜臨海公園 野球場", "浜甲子園運動公園多目的広場 軟式野球場", "十三公園 十三野球場", "大倉山公園", "天王ダムスポーツガーデン", "東浦サンパーク"];
 
 var FIELD_POS = ["投手","捕手","一塁","二塁","三塁","遊撃","左翼","中堅","右翼","指名打者","控え"];
 // 守備番号ボタン配列(グラウンド配置を模したレイアウト: 外野→内野)
@@ -536,9 +628,12 @@ var POS_BTNS = [
   {n:5,label:"三"},{n:2,label:"捕"},{n:3,label:"一"}
 ];
 var TYPE_CHAR = {"ゴロ":"ゴ","フライ":"飛","ライナー":"直","内野フライ":"内"};
-var HIT_RESULTS = {"単打":1,"二塁打":1,"三塁打":1,"本塁打":1};
-var OFF_OUT_RESULTS = {"三振":1,"アウト":1,"犠打":1,"犠飛":1};
-var RESULT_SHORT = {"単打":"安","二塁打":"二","三塁打":"三","本塁打":"本","失策出塁":"失"};
+var HIT_RESULTS = {"単打":1,"内野安打":1,"二塁打":1,"三塁打":1,"本塁打":1};
+var OFF_OUT_RESULTS = {"三振":1,"アウト":1,"併殺打":1,"犠打":1,"犠飛":1};
+var OUTS_OF = {"併殺打":2, "併殺":2};   // 1打席で増えるアウト数(既定は1)
+var RESULT_SHORT = {"単打":"安","内野安打":"内安","二塁打":"二","三塁打":"三","本塁打":"本","失策出塁":"失","併殺打":"併"};
+var DECISIONS = ["勝","負","S","H"];
+var EXCLUSIVE_DECISIONS = {"勝":1,"負":1,"S":1};   // 1試合に1人だけ
 
 /* ============ 状態 ============ */
 var G = null; // 現在の試合状態(丸ごとlocalStorageに保存)
@@ -548,11 +643,11 @@ function blankGame(){
   var d = today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
   return {
     createdAt: Date.now(),
-    info: { recorder:"将軍", date:d, opponent:"", place:"", firstAttack:1, gameNo:1 },
+    info: { recorder:"将軍", date:d, opponent:"", place:"", firstAttack:1, gameNo:1, category:"練習試合" },
     lineup: [], // {order, name, position}
     atBats: [], // {id, order, batter, inning, result, pos, ballType}
     defense: [], // {id, inning, result, fielder, ballType, runsAllowed}
-    pitchers: [], // {id, name, outs, r, er, h, hr, so, bb, hbp, wp, note}
+    pitchers: [], // {id, name, outs, r, er, h, hr, so, bb, hbp, wp, note, decision, pitches}
     tally: {}, // name -> {rbi, run, error, sb, cs}
     linescore: { self:{}, opp:{} }, // inning(number as string) -> runs
     subs: [], // {type, order, detail, from}
@@ -570,6 +665,8 @@ function save(){
 function normalizeGame(g){
   // 旧バージョンで保存された試合(投手成績が無い)を後方互換で補う
   if(g && !Array.isArray(g.pitchers)) g.pitchers = [];
+  if(g && g.info && !g.info.category) g.info.category = "練習試合";
+  if(g) (g.pitchers||[]).forEach(function(p){ if(p.decision==null) p.decision=""; if(p.pitches==null) p.pitches=0; });
   return g;
 }
 function load(){
@@ -643,7 +740,7 @@ function tenPos(){ return G.info.firstAttack ? "表" : "裏"; } // 自チーム�
 
 /* ============ 画面遷移 ============ */
 function show(screen){
-  ["gate","setup","sheet","export","sent"].forEach(function(s){
+  ["gate","setup","sheet","export","sent","roster"].forEach(function(s){
     $("screen-"+s).classList.toggle("active", s===screen);
   });
   $("footer-bar").style.display = (screen==="sheet") ? "flex" : "none";
@@ -694,12 +791,14 @@ function optionList(names, selected){
 }
 function renderSetup(){
   // 記録者
-  $("set-recorder").innerHTML = optionList(RECORDER_NAMES, G.info.recorder);
+  $("set-recorder").innerHTML = optionList(namesWith(RECORDER_NAMES, G.info.recorder), G.info.recorder);
   $("set-date").value = G.info.date;
   $("set-opponent").value = G.info.opponent;
   $("set-place").value = G.info.place;
   $("set-firstattack").value = String(G.info.firstAttack);
   $("set-gameno").value = String(G.info.gameNo || 1);
+  $("set-category").value = G.info.category || "練習試合";
+  renderSuggestLists();
   $("edit-sent-btn").style.display = WORKER_URL ? "block" : "none";
 
   // 打順(最低9行)
@@ -762,7 +861,7 @@ function renderLineupCard(){
     return '<div class="lineup-row">'
       + '<div class="order-badge">'+(i+1)+'</div>'
       + '<select class="field-select name-sel" data-i="'+i+'"><option value="">選手を選ぶ</option>'
-        + PLAYER_NAMES.map(function(n){ return '<option'+(n===row.name?" selected":"")+'>'+esc(n)+'</option>'; }).join("")
+        + namesWith(PLAYER_NAMES, row.name).map(function(n){ return '<option'+(n===row.name?" selected":"")+'>'+esc(n)+'</option>'; }).join("")
         + '</select>'
       + '<select class="field-select pos-sel" data-i="'+i+'">'
         + FIELD_POS.map(function(p){ return '<option'+(p===row.position?" selected":"")+'>'+esc(p)+'</option>'; }).join("")
@@ -791,6 +890,14 @@ function bindSetup(){
   $("set-place").addEventListener("input", function(){ G.info.place=this.value; save(); });
   $("set-firstattack").addEventListener("change", function(){ G.info.firstAttack=+this.value; save(); });
   $("set-gameno").addEventListener("change", function(){ G.info.gameNo=parseInt(this.value,10)||1; save(); });
+  $("set-category").addEventListener("change", function(){ G.info.category=this.value; save(); });
+  $("open-roster-btn").addEventListener("click", function(){ renderRosterScreen(); show("roster"); });
+  $("roster-back-btn").addEventListener("click", function(){ renderSetup(); show("setup"); });
+  $("roster-add-btn").addEventListener("click", function(){ openRosterModal(null); });
+  $("rm-save").addEventListener("click", saveRosterModal);
+  $("rm-retire").addEventListener("click", toggleRetireRosterModal);
+  $("rm-delete").addEventListener("click", deleteRosterModal);
+  $("rm-cancel").addEventListener("click", closeRosterModal);
   $("edit-sent-btn").addEventListener("click", openSentScreen);
   $("sent-back-btn").addEventListener("click", function(){ renderSetup(); show("setup"); });
   $("add-lineup-btn").addEventListener("click", function(){
@@ -885,7 +992,7 @@ function renderGrid(){
   });
   $("grid-legend").innerHTML =
     "数字＝守備位置(1投 2捕 3一 4二 5三 6遊 7左 8中 9右)　"
-    + "ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ　安=単打 二/三=塁打 本=本塁打 失=相手失策　"
+    + "ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ　安=単打 内安=内野安打 二/三=塁打 本=本塁打 失=相手失策 併=併殺打　"
     + "<span style='color:var(--accent)'>緑=安打</span>";
 }
 function renderTally(){
@@ -905,13 +1012,11 @@ function renderTally(){
       var t = tallyOf(b.dataset.n);
       var k = b.dataset.k, d = +b.dataset.d;
       var nv = Math.max(0, t[k]+d);
-      var actual = nv - t[k];
       t[k] = nv;
       // 該当ピルの数値だけ書き換える(全体を作り直すとSafariでレイアウトが一瞬崩れることがあるため)
       var pill = b.closest(".tally");
       if(pill){ var vs = pill.querySelector(".tval"); if(vs) vs.textContent = nv; }
-      if(k==="run" && actual!==0){ addLinescore("self", G.state.inning, actual); renderLinescore(); }
-      save();
+      save();   // 得点・打点はスコアボードと連動させない(スコアボードは直接入力)
     });
   });
 }
@@ -922,19 +1027,24 @@ function outsToText(outs){
   var inn = Math.floor(outs/3), rem = outs%3;
   return inn + "回" + (rem ? rem+"/3" : "");
 }
+function blankPitcher(name){
+  return { id:uid(), name:name, outs:0, r:0, er:0, h:0, hr:0, so:0, bb:0, hbp:0, wp:0, note:"", decision:"", pitches:0 };
+}
 function pitcherOf(id){ return G.pitchers.find(function(p){ return p.id===id; }); }
 function seedPitchers(){
   if(G.pitchers.length) return;
   var starter = G.lineup.find(function(r){ return r.position==="投手" && r.name; });
   if(starter){
-    G.pitchers.push({ id:uid(), name:starter.name, outs:0, r:0, er:0, h:0, hr:0, so:0, bb:0, hbp:0, wp:0, note:"" });
+    G.pitchers.push(blankPitcher(starter.name));
   }
 }
 function renderPitching(){
   seedPitchers();
   var wrap = $("pitcher-block");
   var rows = G.pitchers.map(function(p, i){
-    var groups = '<div class="tally"><span class="tlabel">投球回</span><span class="tval">'+outsToText(p.outs)+'</span>'
+    var groups = '<div class="tally" style="padding-right:4px"><span class="tlabel">球数</span>'
+      + '<input class="np-input" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" data-np="'+p.id+'" value="'+(p.pitches?p.pitches:"")+'" placeholder="-"></div>';
+    groups += '<div class="tally"><span class="tlabel">投球回</span><span class="tval">'+outsToText(p.outs)+'</span>'
       + '<button class="minus" data-pid="'+p.id+'" data-k="outs" data-d="-1">−</button>'
       + '<button class="plus" data-pid="'+p.id+'" data-k="outs" data-d="1">＋</button></div>';
     groups += PITCH_STAT_FIELDS.map(function(f){
@@ -945,6 +1055,9 @@ function renderPitching(){
     }).join("");
     return '<div class="pitcher-row">'
       + '<div class="prow-head"><span class="pname">'+(i+1)+'. '+esc(p.name)+'</span>'
+      + '<div class="dec-group">' + DECISIONS.map(function(dc){
+          return '<button class="dec-btn'+(p.decision===dc?" sel":"")+'" data-dpid="'+p.id+'" data-dec="'+dc+'" title="'+({"勝":"勝利投手","負":"敗戦投手","S":"セーブ","H":"ホールド"}[dc])+'">'+dc+'</button>';
+        }).join("") + '</div>'
       + (G.pitchers.length>1 ? '<button class="pdel" data-delp="'+p.id+'">×</button>' : '<span style="width:20px;flex-shrink:0"></span>')
       + '</div>'
       + '<div class="tally-groups">'+groups+'</div>'
@@ -953,7 +1066,7 @@ function renderPitching(){
   }).join("");
   var benchForPitcher = PLAYER_NAMES.filter(function(n){ return !G.pitchers.some(function(p){ return p.name===n; }); });
   wrap.innerHTML = rows + '<div class="pitcher-add">'
-    + '<select id="pitcher-add-select">' + optionList(benchForPitcher) + '</select>'
+    + '<select class="field-select" id="pitcher-add-select" style="padding:8px 10px">' + optionList(benchForPitcher) + '</select>'
     + '<button id="pitcher-add-btn">＋ 投手交代</button></div>';
 
   wrap.querySelectorAll(".pitcher-row .tally button").forEach(function(b){
@@ -964,6 +1077,31 @@ function renderPitching(){
       p[k] = Math.max(0, (p[k]||0)+d);
       var pill = b.closest(".tally");
       if(pill){ var vs = pill.querySelector(".tval"); if(vs) vs.textContent = (k==="outs") ? outsToText(p.outs) : p[k]; }
+      save();
+    });
+  });
+  wrap.querySelectorAll(".np-input").forEach(function(inp){
+    inp.addEventListener("input", function(){ inp.value = inp.value.replace(/[^0-9]/g,"").slice(0,3); });
+    inp.addEventListener("focus", function(){ try{ inp.select(); }catch(e){} });
+    inp.addEventListener("change", function(){
+      var p = pitcherOf(inp.dataset.np);
+      if(p){ p.pitches = parseInt(inp.value,10) || 0; save(); }
+    });
+  });
+  wrap.querySelectorAll(".dec-btn").forEach(function(b){
+    b.addEventListener("click", function(){
+      var p = pitcherOf(b.dataset.dpid);
+      if(!p) return;
+      var dc = b.dataset.dec;
+      p.decision = (p.decision===dc) ? "" : dc;
+      // 勝・負・セーブは1試合に1人だけ(他の投手から外す)
+      if(p.decision && EXCLUSIVE_DECISIONS[dc]){
+        G.pitchers.forEach(function(o){ if(o!==p && o.decision===dc) o.decision=""; });
+      }
+      wrap.querySelectorAll(".dec-btn").forEach(function(x){
+        var px = pitcherOf(x.dataset.dpid);
+        x.classList.toggle("sel", !!px && px.decision===x.dataset.dec);
+      });
       save();
     });
   });
@@ -986,7 +1124,7 @@ function renderPitching(){
       var sel = $("pitcher-add-select");
       var name = sel && sel.value;
       if(!name){ toast("追加できる選手がいません"); return; }
-      G.pitchers.push({ id:uid(), name:name, outs:0, r:0, er:0, h:0, hr:0, so:0, bb:0, hbp:0, wp:0, note:"" });
+      G.pitchers.push(blankPitcher(name));
       renderPitching(); save();
       toast(name+"を投手に追加しました");
     });
@@ -999,11 +1137,10 @@ function innMax(){
   return Math.max(m, 7);
 }
 function lsGet(side, inn){ var v=G.linescore[side][inn]; return v===undefined?null:v; }
-function addLinescore(side, inn, delta){
-  var cur = G.linescore[side][inn] || 0;
-  var nv = Math.max(0, cur+delta);
-  if(nv===0 && G.linescore[side][inn]===undefined) return;
-  G.linescore[side][inn] = nv;
+function setLinescore(side, inn, raw){
+  var v = String(raw==null?"":raw).replace(/[^0-9]/g,"");
+  if(v==="") delete G.linescore[side][inn];
+  else G.linescore[side][inn] = Math.min(99, parseInt(v,10));
 }
 function renderLinescore(){
   var inns = [];
@@ -1014,9 +1151,10 @@ function renderLinescore(){
       + inns.map(function(i){
           var v = lsGet(side,i);
           var cur = (i===G.state.inning) ? " cur" : "";
-          return '<td class="cell'+cur+'"><button data-side="'+side+'" data-inn="'+i+'">'+(v===null?"":v)+'</button></td>';
+          return '<td class="cell'+cur+'"><input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" enterkeyhint="next" autocomplete="off"'
+            + ' aria-label="'+esc(label)+' '+i+'回の得点" data-side="'+side+'" data-inn="'+i+'" value="'+(v===null?"":v)+'"></td>';
         }).join("")
-      + '<td class="total">'+sum(side)+'</td></tr>';
+      + '<td class="total" data-total="'+side+'">'+sum(side)+'</td></tr>';
   }
   var selfLabel = "自チーム", oppLabel = G.info.opponent || "相手";
   $("linescore").innerHTML =
@@ -1024,12 +1162,22 @@ function renderLinescore(){
     + '<tbody>'
     + (G.info.firstAttack ? rowHtml(selfLabel,"self")+rowHtml(oppLabel,"opp") : rowHtml(oppLabel,"opp")+rowHtml(selfLabel,"self"))
     + '</tbody>';
-  $("linescore").querySelectorAll("button").forEach(function(b){
-    var t;
-    b.addEventListener("click", function(){ addLinescore(b.dataset.side, +b.dataset.inn, 1); renderLinescore(); save(); });
-    b.addEventListener("touchstart", function(){ t=setTimeout(function(){ addLinescore(b.dataset.side, +b.dataset.inn, -1); renderLinescore(); save(); }, 550); }, {passive:true});
-    b.addEventListener("touchend", function(){ clearTimeout(t); });
-    b.addEventListener("contextmenu", function(e){ e.preventDefault(); addLinescore(b.dataset.side, +b.dataset.inn, -1); renderLinescore(); save(); });
+  var inputs = Array.prototype.slice.call($("linescore").querySelectorAll("input"));
+  // 入力順は「表→裏」の進行順(1回表,1回裏,2回表…)にする
+  var firstSide = G.info.firstAttack ? "self" : "opp";
+  inputs.sort(function(a,b){ return (+a.dataset.inn - +b.dataset.inn) || ((a.dataset.side===firstSide?0:1) - (b.dataset.side===firstSide?0:1)); });
+  inputs.forEach(function(inp, idx){
+    inp.addEventListener("focus", function(){ try{ inp.select(); }catch(e){} });
+    inp.addEventListener("input", function(){
+      inp.value = inp.value.replace(/[^0-9]/g,"").slice(0,2);
+      setLinescore(inp.dataset.side, +inp.dataset.inn, inp.value);
+      var tot = $("linescore").querySelector('[data-total="'+inp.dataset.side+'"]');
+      if(tot) tot.textContent = sum(inp.dataset.side);
+      save();
+    });
+    inp.addEventListener("keydown", function(e){
+      if(e.key==="Enter"){ e.preventDefault(); var nx = inputs[idx+1]; if(nx) nx.focus(); else inp.blur(); }
+    });
   });
 }
 function renderStateBar(){
@@ -1046,13 +1194,13 @@ function renderPlayLog(){
   var wrap = $("play-log");
   if(!G.defense.length){ wrap.innerHTML = '<div class="sub-log-item" style="color:var(--ink-faint)">まだ記録はありません</div>'; return; }
   wrap.innerHTML = G.defense.map(function(p, idx){
-    var out = (p.result==="アウト" || p.result==="三振");
+    var out = (p.result==="アウト" || p.result==="三振" || p.result==="併殺");
     var sub = p.fielder ? ('自チーム '+p.fielder+' が処理'+(p.ballType?("・"+p.ballType):"")) : "";
     var runs = p.runsAllowed ? ('　失点'+p.runsAllowed) : "";
     return '<div class="play-log-item"><div class="pnum">'+(idx+1)+'</div>'
       + '<div class="desc">'+esc(p.result)+esc(runs)
         + (sub?'<span class="sub">'+esc(sub)+'</span>':"")+'</div>'
-      + (out?'<span class="out-mark">アウト</span>':"")
+      + (out?'<span class="out-mark">'+(p.result==="併殺"?"2アウト":"アウト")+'</span>':"")
       + '<button class="edit" data-did="'+p.id+'">✎</button></div>';
   }).join("");
   wrap.querySelectorAll(".edit").forEach(function(b){
@@ -1077,8 +1225,8 @@ function renderSheet(){
 }
 
 /* ============ アウト/イニング進行 ============ */
-function registerOut(){
-  G.state.outs++;
+function registerOut(n){
+  G.state.outs += (n||1);
   if(G.state.outs >= 3){
     G.state.outs = 0;
     if(G.state.half==="off"){ G.state.half="def"; }
@@ -1125,6 +1273,7 @@ function saveEntry(){
   else {
     if(!offSel.pos || !offSel.result){ toast("守備位置と結果を選んでください"); return; }
     if(!offSel.type){ toast("打球タイプ(ゴロ/フライ/ライナー/内野フライ)も選んでください"); return; }
+    if(offSel.result==="内野安打" && +offSel.pos>6){ toast("内野安打は内野(1〜6)の守備位置を選んでください"); return; }
     result = offSel.result; pos = +offSel.pos; type = offSel.type;
   }
   var row = G.lineup.find(function(r){ return r.order===entryCtx.order; });
@@ -1141,7 +1290,7 @@ function saveEntry(){
       id: uid(), order: entryCtx.order, batter: row?row.name:"", seq: newSeq,
       inning: G.state.inning, result: result, pos: pos, ballType: type
     });
-    if(OFF_OUT_RESULTS[result]) registerOut();
+    if(OFF_OUT_RESULTS[result]) registerOut(OUTS_OF[result]||1);
   }
   closeEntry();
   renderGrid(); renderStateBar(); save();
@@ -1201,13 +1350,11 @@ function saveDef(){
 
   if(defCtx.did){
     var p = G.defense.find(function(x){ return x.id===defCtx.did; });
-    var runDelta = (defSel.runs||0) - (p.runsAllowed||0);
     p.result=result; p.fielder=fielder; p.ballType=type; p.runsAllowed=defSel.runs||0;
-    if(runDelta) addLinescore("opp", p.inning, runDelta);
   } else {
+    // 失点はメモとして残すだけ。スコアボードは直接入力なので自動では足さない
     G.defense.push({ id:uid(), inning:G.state.inning, result:result, fielder:fielder, ballType:type, runsAllowed:defSel.runs||0 });
-    if(defSel.runs) addLinescore("opp", G.state.inning, defSel.runs);
-    if(result==="アウト" || result==="三振") registerOut();
+    if(result==="アウト" || result==="三振" || result==="併殺") registerOut(OUTS_OF[result]||1);
   }
   closeDef();
   renderPlayLog(); renderLinescore(); renderStateBar(); save();
@@ -1221,7 +1368,6 @@ function deleteDef(){
   var p = G.defense.find(function(x){ return x.id===defCtx.did; });
   var prevDef = JSON.parse(JSON.stringify(G.defense));
   var prevLs = JSON.parse(JSON.stringify(G.linescore));
-  if(p && p.runsAllowed) addLinescore("opp", p.inning, -p.runsAllowed);
   G.defense = G.defense.filter(function(x){ return x.id!==defCtx.did; });
   closeDef(); renderPlayLog(); renderLinescore(); save();
   recordAction("守備記録の削除", function(){ G.defense=prevDef; G.linescore=prevLs; renderPlayLog(); renderLinescore(); });
@@ -1283,13 +1429,14 @@ function exportFor(g){
   return {
     app:"peccino-score-input", version:1, exportedAt:new Date().toISOString(),
     game:{ date:g.info.date, opponent:g.info.opponent, place:g.info.place,
-      firstAttack:!!g.info.firstAttack, recordedBy:g.info.recorder },
+      firstAttack:!!g.info.firstAttack, recordedBy:g.info.recorder, category:g.info.category||"練習試合" },
     lineup:(g.lineup||[]).map(function(r){ return { order:r.order, name:r.name, position:r.position }; }),
     atBats:atBats, defense:defense,
     playerTally:g.tally||{},
     pitchers:(g.pitchers||[]).map(function(p,i){
       return { order:i+1, name:p.name, outs:p.outs||0, r:p.r||0, er:p.er||0, h:p.h||0, hr:p.hr||0,
-        so:p.so||0, bb:p.bb||0, hbp:p.hbp||0, wp:p.wp||0, note:p.note||"" };
+        so:p.so||0, bb:p.bb||0, hbp:p.hbp||0, wp:p.wp||0, note:p.note||"",
+        decision:p.decision||"", pitches:p.pitches||0 };
     }),
     linescore:{ self:lsArr("self"), opp:lsArr("opp") },
     substitutions:g.subs||[],
@@ -1311,7 +1458,7 @@ function buildText(g){
   var L = [];
   L.push("Peccino 試合記録");
   L.push((d.game.date||"") + " vs " + (d.game.opponent||"(未設定)") + (d.game.place?(" @"+d.game.place):""));
-  L.push("記録:" + (d.game.recordedBy||"") + " / " + (d.game.firstAttack?"先攻":"後攻"));
+  L.push("記録:" + (d.game.recordedBy||"") + " / " + (d.game.firstAttack?"先攻":"後攻") + " / " + categoryLabel(d.game.category));
   L.push("");
 
   var ss = trimTrailingNull(d.linescore.self), os = trimTrailingNull(d.linescore.opp);
@@ -1355,6 +1502,7 @@ function buildText(g){
     L.push("■ 投手成績");
     d.pitchers.forEach(function(p){
       var ex = [];
+      if(p.pitches) ex.push(p.pitches+"球");
       if(p.r) ex.push("失点"+p.r);
       if(p.er) ex.push("自責"+p.er);
       if(p.h) ex.push("被安打"+p.h);
@@ -1363,7 +1511,7 @@ function buildText(g){
       if(p.bb) ex.push("与四球"+p.bb);
       if(p.hbp) ex.push("与死球"+p.hbp);
       if(p.wp) ex.push("暴投"+p.wp);
-      L.push(String(p.order) + " " + padR(p.name+" ",13) + padR(outsToText(p.outs)+" ",8)
+      L.push(String(p.order) + " " + padR(p.name+" ",13) + (p.decision ? "("+p.decision+") " : "") + padR(outsToText(p.outs)+" ",8)
         + (ex.join(" ") || "-") + (p.note ? ("   ["+p.note+"]") : ""));
     });
     L.push("");
@@ -1381,8 +1529,9 @@ function buildText(g){
         else if(p.result==="四球" || p.result==="死球") base = p.result;
         else if(p.result==="アウト") base = (p.fielder||"") + tc;
         else if(p.result==="安打") base = (p.fielder||"") + "安" + tc;
+        else if(p.result==="併殺") base = (p.fielder||"") + "併" + tc;
         else base = (p.fielder||"") + "失" + tc;
-        var out = (p.result==="アウト" || p.result==="三振") ? "○" : "";
+        var out = (p.result==="アウト" || p.result==="三振") ? "○" : (p.result==="併殺" ? "○○" : "");
         var rn = p.runsAllowed ? ("("+p.runsAllowed+"点)") : "";
         return base + out + rn;
       });
@@ -1397,7 +1546,7 @@ function buildText(g){
     L.push("");
   }
 
-  L.push("記号: 数字=守備位置(1投2捕3一4二5三6遊7左8中9右) ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ / 安=単打 二三本=塁打 失=相手失策 ○=アウト");
+  L.push("記号: 数字=守備位置(1投2捕3一4二5三6遊7左8中9右) ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ / 安=単打 内安=内野安打 二三本=塁打 失=相手失策 併=併殺 ○=アウト");
   return L.join("\n");
 }
 
@@ -1421,7 +1570,7 @@ function renderExport(){
   var already = !!getSent()[sid];
   $("export-summary").innerHTML =
     "<b>"+esc(data.game.date)+"　vs "+esc(data.game.opponent||"")+"</b>"
-    + (G.info.gameNo>1 ? "（"+G.info.gameNo+"試合目）" : "") + "<br>"
+    + (G.info.gameNo>1 ? "（"+G.info.gameNo+"試合目）" : "") + "　<span style='color:var(--ink-faint)'>"+esc(categoryLabel(G.info.category))+"</span><br>"
     + "スコア: 自 "+selfTotal+" − "+oppTotal+" 相手 ("+res+")<br>"
     + "打席記録: "+data.atBats.length+"件 ・ 守備記録: "+data.defense.length+"件 ・ 記録者: "+esc(data.game.recordedBy);
   var btn = $("send-btn");
@@ -1434,6 +1583,7 @@ function renderExport(){
     btn.textContent = already ? "🔁 サイトに再送信（上書き）" : "🚀 サイトに送信";
     $("send-status").textContent = already ? "この試合は送信済みです（"+esc(sid)+"）。修正して再送信すると上書きされます。" : "";
   }
+  renderChecks();
   applyExportFmt();
 }
 
@@ -1491,7 +1641,8 @@ function gameFromExport(d){
     opponent: (d.game && d.game.opponent) || "",
     place: (d.game && d.game.place) || "",
     firstAttack: (d.game && d.game.firstAttack) ? 1 : 0,
-    gameNo: 1
+    gameNo: 1,
+    category: (d.game && d.game.category) || "練習試合"
   };
   g.lineup = (d.lineup||[]).map(function(r){ return { order:r.order, name:r.name, position:r.position }; });
   g.atBats = (d.atBats||[]).map(function(ab){
@@ -1504,7 +1655,8 @@ function gameFromExport(d){
   g.tally = d.playerTally || {};
   g.pitchers = (d.pitchers||[]).map(function(p){
     return { id:uid(), name:p.name, outs:p.outs||0, r:p.r||0, er:p.er||0, h:p.h||0, hr:p.hr||0,
-             so:p.so||0, bb:p.bb||0, hbp:p.hbp||0, wp:p.wp||0, note:p.note||"" };
+             so:p.so||0, bb:p.bb||0, hbp:p.hbp||0, wp:p.wp||0, note:p.note||"",
+             decision:p.decision||"", pitches:p.pitches||0 };
   });
   g.linescore = { self:{}, opp:{} };
   (d.linescore && d.linescore.self || []).forEach(function(v,i){ if(v!=null) g.linescore.self[i+1]=v; });
@@ -1522,7 +1674,7 @@ async function openSentScreen(){
     var res = await fetch("https://api.github.com/repos/"+GH_OWNER_REPO+"/contents/submitted-games?ref=main", { headers:{ "Accept":"application/vnd.github+json" } });
     if(!res.ok){ throw new Error("HTTP "+res.status); }
     var list = await res.json();
-    var jsons = (Array.isArray(list)?list:[]).filter(function(f){ return /\.json$/.test(f.name); })
+    var jsons = (Array.isArray(list)?list:[]).filter(function(f){ return /\.json$/.test(f.name) && f.name.indexOf("0000-00-00_")!==0; })
       .sort(function(a,b){ return a.name<b.name ? 1 : -1; });
     if(!jsons.length){ $("sent-list").innerHTML = '<div class="sub-log-item" style="color:var(--ink-faint)">送信済みの試合はまだありません</div>'; return; }
     $("sent-list").innerHTML = jsons.map(function(f){
@@ -1622,9 +1774,10 @@ function bindSheet(){
     document.querySelectorAll("#off-result .opt-btn").forEach(function(x){ x.classList.remove("sel"); }); b.classList.add("sel");
     offSel.result = b.dataset.r;
     // 本塁打は打球タイプ未選択ならフライを初期選択(ふつうフライ。ライナー弾なら選び直す)
-    if(b.dataset.r === "本塁打" && !offSel.type){
-      offSel.type = "フライ";
-      var tb = document.querySelector('#off-type .opt-btn[data-t="フライ"]');
+    var defType = { "本塁打":"フライ", "内野安打":"ゴロ", "併殺打":"ゴロ" }[b.dataset.r];
+    if(defType && !offSel.type){
+      offSel.type = defType;
+      var tb = document.querySelector('#off-type .opt-btn[data-t="'+defType+'"]');
       if(tb) tb.classList.add("sel");
     }
   });
@@ -1719,6 +1872,276 @@ function bindSheet(){
   });
 }
 
+/* ============ 送信前チェック(止めはしない・気づき用) ============ */
+function categoryLabel(c){ return c==="公式戦" ? "リーグ戦・公式戦" : "練習試合"; }
+function gameChecks(g){
+  var d = exportFor(g), out = [];
+  function sumArr(a){ return a.reduce(function(x,y){ return x+(y||0); },0); }
+  var selfT = sumArr(d.linescore.self), oppT = sumArr(d.linescore.opp);
+  var tally = g.tally || {};
+  var runs = 0, rbi = 0;
+  Object.keys(tally).forEach(function(n){ runs += (tally[n].run||0); rbi += (tally[n].rbi||0); });
+  var filled = d.linescore.self.concat(d.linescore.opp).some(function(v){ return v!=null; });
+  if(!filled) out.push(["warn","スコアボードが空です（得点を数字で入れてください）"]);
+  if(runs===selfT) out.push(["ok","スコアの合計（"+selfT+"点）と選手ごとの得点の合計が一致"]);
+  else out.push(["warn","スコアの合計は"+selfT+"点ですが、選手ごとの「得点」の合計は"+runs+"点です"]);
+  if(rbi>selfT) out.push(["warn","打点の合計（"+rbi+"）がチームの得点（"+selfT+"）より多いです"]);
+  var pr = 0; d.pitchers.forEach(function(p){ pr += p.r||0; });
+  if(d.pitchers.length){
+    if(pr===oppT) out.push(["ok","相手の得点（"+oppT+"点）と投手の失点の合計が一致"]);
+    else out.push(["warn","相手の得点は"+oppT+"点ですが、投手の「失点」の合計は"+pr+"点です"]);
+  } else {
+    out.push(["warn","投手成績が入っていません（守備画面の「投手成績」）"]);
+  }
+  d.pitchers.forEach(function(p){ if((p.er||0)>(p.r||0)) out.push(["warn",p.name+"：自責点（"+p.er+"）が失点（"+p.r+"）より多いです"]); });
+  var decs = {}; d.pitchers.forEach(function(p){ if(p.decision) decs[p.decision]=p.name; });
+  if(d.pitchers.length && filled){
+    if(selfT>oppT && !decs["勝"]) out.push(["warn","勝ち試合ですが、勝利投手（勝）が未設定です"]);
+    if(selfT<oppT && !decs["負"]) out.push(["warn","負け試合ですが、敗戦投手（負）が未設定です"]);
+    if(selfT<=oppT && decs["勝"]) out.push(["warn","勝ち試合ではないのに「勝」が付いています（"+decs["勝"]+"）"]);
+    if(selfT>=oppT && decs["負"]) out.push(["warn","負け試合ではないのに「負」が付いています（"+decs["負"]+"）"]);
+    if((selfT>oppT && decs["勝"]) || (selfT<oppT && decs["負"])) out.push(["ok","勝敗投手：" + DECISIONS.filter(function(k){return decs[k];}).map(function(k){ return k+"="+decs[k]; }).join(" / ")]);
+  }
+  var noPitches = d.pitchers.filter(function(p){ return !p.pitches; }).map(function(p){ return p.name; });
+  if(d.pitchers.length && noPitches.length) out.push(["warn","球数が未入力の投手：" + noPitches.join("、") + "（分からなければ空欄のままでOK）"]);
+  if(!d.atBats.length) out.push(["warn","打席の記録がありません"]);
+  return out;
+}
+function renderChecks(){
+  var list = gameChecks(G);
+  $("export-checks").innerHTML = list.map(function(c){
+    return '<li class="'+c[0]+'"><span class="ic">'+(c[0]==="ok"?"✓":"!")+'</span><span>'+esc(c[1])+'</span></li>';
+  }).join("");
+}
+
+/* ============ 入力候補(対戦相手・球場) ============ */
+function renderSuggestLists(){
+  var opps = [], places = [];
+  getArchive().forEach(function(it){ var i = it.data && it.data.info; if(i){ if(i.opponent) opps.push(i.opponent); if(i.place) places.push(i.place); } });
+  opps = uniq(opps.concat(KNOWN_OPPONENTS)); places = uniq(places.concat(KNOWN_PLACES));
+  $("opp-list").innerHTML = opps.map(function(o){ return '<option value="'+esc(o)+'"></option>'; }).join("");
+  $("place-list").innerHTML = places.map(function(o){ return '<option value="'+esc(o)+'"></option>'; }).join("");
+}
+function uniq(a){ var seen={}; return a.filter(function(x){ if(seen[x]) return false; seen[x]=1; return true; }); }
+
+/* ============ 選手名簿 ============ */
+function namesWith(list, extra){ return (extra && list.indexOf(extra)<0) ? list.concat([extra]) : list; }
+function isStaffEntry(p){ return /^スタッフ/.test(p.position||""); }
+function cleanRosterEntry(p){
+  return {
+    key: String(p.key || p.name || ""), name: String(p.name||"").trim(), number: String(p.number==null?"":p.number).trim(),
+    position: p.position || "外野手", sub_position: p.sub_position || "", throws: p.throws==="左"?"左":"右",
+    bats: (p.bats==="左"||p.bats==="両") ? p.bats : "右", age: String(p.age||""), role_and_join_year: p.role_and_join_year || "",
+    career: p.career || "", pr: p.pr || "", active: p.active !== false
+  };
+}
+function rosterSorted(list){
+  return list.slice().sort(function(a,b){
+    var na = parseInt(a.number,10), nb = parseInt(b.number,10);
+    if(isNaN(na)) na = 9999; if(isNaN(nb)) nb = 9999;
+    return (na-nb) || a.name.localeCompare(b.name, "ja");
+  });
+}
+function refreshRosterNames(){
+  var act = rosterSorted(rosterDoc.players).filter(function(p){ return p.active!==false && p.name; });
+  PLAYER_NAMES = act.filter(function(p){ return !isStaffEntry(p); }).map(function(p){ return p.name; });
+  RECORDER_NAMES = act.filter(isStaffEntry).map(function(p){ return p.name; }).concat(PLAYER_NAMES);
+}
+function fillMissingBase(list){
+  var keys = {}; list.forEach(function(p){ keys[p.key]=1; });
+  ROSTER_BASE.forEach(function(b){ if(!keys[b.key]) list.push(cleanRosterEntry(b)); });
+  return list;
+}
+function saveRosterLocal(){ try{ localStorage.setItem(ROSTER_KEY, JSON.stringify(rosterDoc)); }catch(e){} }
+function initRoster(){
+  var local = null;
+  try{ local = JSON.parse(localStorage.getItem(ROSTER_KEY)||"null"); }catch(e){}
+  if(local && Array.isArray(local.players)){
+    rosterDoc = { updatedAt: local.updatedAt||0, pending: !!local.pending, players: fillMissingBase(local.players.map(cleanRosterEntry)) };
+  } else {
+    rosterDoc = { updatedAt: 0, pending: false, players: ROSTER_BASE.map(cleanRosterEntry) };
+  }
+  refreshRosterNames();
+  fetchRemoteRoster();
+}
+// サイト(GitHub)上の最新名簿を取りに行く。手元に未送信の変更があれば手元を優先
+async function fetchRemoteRoster(){
+  rosterRemote = "loading";
+  try{
+    var res = await fetch("https://api.github.com/repos/"+GH_OWNER_REPO+"/contents/submitted-games/"+ROSTER_ID+".json?ref=main",
+      { headers:{ "Accept":"application/vnd.github.raw+json" }, cache:"no-store" });
+    if(res.status===404){ rosterRemote = "none"; afterRosterChange(false); return; }
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    var remote = await res.json();
+    if(!remote || !Array.isArray(remote.players)) throw new Error("形式不正");
+    rosterRemote = "ok";
+    if(!rosterDoc.pending && (remote.updatedAt||0) >= (rosterDoc.updatedAt||0)){
+      rosterDoc = { updatedAt: remote.updatedAt||0, pending:false, players: fillMissingBase(remote.players.map(cleanRosterEntry)) };
+      saveRosterLocal();
+      afterRosterChange(true);
+      return;
+    }
+    afterRosterChange(false);
+  }catch(e){
+    rosterRemote = "error";
+    afterRosterChange(false);
+  }
+}
+function afterRosterChange(namesChanged){
+  if(namesChanged) refreshRosterNames();
+  if($("screen-roster").classList.contains("active")) renderRosterScreen();
+  else if(namesChanged && $("screen-setup").classList.contains("active") && G){
+    $("set-recorder").innerHTML = optionList(namesWith(RECORDER_NAMES, G.info.recorder), G.info.recorder);
+    renderLineupCard();
+  }
+}
+function rosterDocForExport(){
+  return { app:"peccino-roster", version:1, updatedAt: rosterDoc.updatedAt,
+    players: rosterSorted(rosterDoc.players).map(cleanRosterEntry) };
+}
+function rosterText(doc){
+  var L = ["Peccino 選手名簿（入力アプリから）", "更新: " + new Date(doc.updatedAt||Date.now()).toLocaleString("ja-JP"), ""];
+  doc.players.forEach(function(p){
+    L.push((p.active?"":"[退団] ") + "#" + (p.number||"-") + " " + p.name + "  " + p.position + " / " + p.throws + "投" + p.bats + "打"
+      + (p.age ? " / "+p.age+"歳" : "") + (p.role_and_join_year ? " / "+p.role_and_join_year : ""));
+  });
+  return L.join("\n");
+}
+async function pushRoster(){
+  if(!WORKER_URL){ renderRosterSync(); return false; }
+  var secret = getSecret();
+  if(!secret){ renderRosterSync(); return false; }
+  setRosterSync("サイトに保存中…", false);
+  try{
+    var doc = rosterDocForExport();
+    var r = await postWorker("/submit", { secret:secret, id:ROSTER_ID, gameJson:doc, gameText:rosterText(doc) });
+    if(r.ok){
+      rosterDoc.pending = false; saveRosterLocal(); rosterRemote = "ok";
+      renderRosterSync(true);
+      toast("名簿を保存しました（数分でサイトに反映）");
+      return true;
+    }
+    if(r.status===401) authSecret = null;
+    setRosterSync("✗ サイトに保存できませんでした（"+esc(r.error)+"）。この端末には保存済みです。", true, true);
+  }catch(e){
+    setRosterSync("✗ 通信できませんでした。この端末には保存済みです。電波の良い所で再送信してください。", true, true);
+  }
+  return false;
+}
+function setRosterSync(html, warn, retry){
+  var el = $("roster-sync");
+  el.className = "sync-line" + (warn ? " warn" : "");
+  el.innerHTML = html + (retry ? '<button id="roster-retry">再送信</button>' : "");
+  var b = $("roster-retry"); if(b) b.addEventListener("click", pushRoster);
+}
+function renderRosterSync(justSaved){
+  if(rosterDoc.pending) return setRosterSync("⚠ この端末だけの変更があります（まだサイトに保存されていません）", true, true);
+  if(justSaved) return setRosterSync("✓ サイトに保存しました。数分で選手ページに反映されます。", false);
+  if(rosterRemote==="loading") return setRosterSync("サイトの最新名簿を確認中…", false);
+  if(rosterRemote==="error") return setRosterSync("サイトの名簿を確認できませんでした（オフライン？）。この端末の名簿を表示しています。", true);
+  if(rosterRemote==="none") return setRosterSync("まだ名簿の変更はありません（チームの初期名簿を表示中）", false);
+  setRosterSync("✓ サイトの最新名簿と同じです" + (rosterDoc.updatedAt ? "（最終更新 "+new Date(rosterDoc.updatedAt).toLocaleDateString("ja-JP")+"）" : ""), false);
+}
+function rosterMeta(p){
+  var bits = [p.position===STAFF_POS ? "スタッフ" : p.position, p.throws+"投"+p.bats+"打"];
+  if(p.age) bits.push(p.age+"歳");
+  if(p.role_and_join_year) bits.push(p.role_and_join_year);
+  return bits.join(" ・ ");
+}
+function renderRosterScreen(){
+  var all = rosterSorted(rosterDoc.players);
+  var act = all.filter(function(p){ return p.active!==false; });
+  var ret = all.filter(function(p){ return p.active===false; });
+  function row(p){
+    var isNew = !ROSTER_BASE.some(function(b){ return b.key===p.key; });
+    return '<button class="roster-row" data-key="'+esc(p.key)+'"><span class="rnum">'+esc(p.number||"-")+'</span>'
+      + '<span class="rinfo"><span class="rname">'+esc(p.name)+(isNew?'<span class="badge-new">追加</span>':'')+'</span>'
+      + '<span class="rmeta">'+esc(rosterMeta(p))+'</span></span><span class="rgo">✎</span></button>';
+  }
+  $("roster-count").textContent = "　" + act.length + "名";
+  $("roster-list").innerHTML = act.map(row).join("") || '<div class="sub-log-item">まだいません</div>';
+  $("roster-retired-head").style.display = ret.length ? "flex" : "none";
+  $("roster-retired").style.display = ret.length ? "block" : "none";
+  $("roster-retired").innerHTML = ret.map(row).join("");
+  document.querySelectorAll("#screen-roster .roster-row").forEach(function(b){
+    b.addEventListener("click", function(){ openRosterModal(b.dataset.key); });
+  });
+  renderRosterSync();
+}
+var rosterEditKey = null;
+function openRosterModal(key){
+  rosterEditKey = key;
+  var p = key ? rosterDoc.players.find(function(x){ return x.key===key; }) : null;
+  var isBase = !!(p && ROSTER_BASE.some(function(b){ return b.key===p.key; }));
+  var e = p || cleanRosterEntry({ key:"", name:"", position:"外野手", role_and_join_year: new Date().getFullYear()+"年度入団" });
+  $("rm-title").textContent = p ? (p.name + " を編集") : "新しい選手を追加";
+  $("rm-name").value = e.name; $("rm-name").disabled = isBase;
+  $("rm-name-note").textContent = isBase
+    ? "※ 名前は過去の成績と紐づいているため変更できません（表記を変えたい時は谷本に相談）"
+    : "※ 試合で使ったあとに名前を変えると、成績が別人として扱われます";
+  $("rm-number").value = e.number; $("rm-position").value = e.position; $("rm-subpos").value = e.sub_position;
+  $("rm-throws").value = e.throws; $("rm-bats").value = e.bats; $("rm-age").value = e.age;
+  $("rm-role").value = e.role_and_join_year; $("rm-career").value = e.career; $("rm-pr").value = e.pr;
+  $("rm-retire").style.display = p ? "block" : "none";
+  $("rm-retire").textContent = (p && p.active===false) ? "在籍に戻す" : "退団にする（選手リストから外す）";
+  $("rm-delete").style.display = (p && !isBase) ? "block" : "none";
+  $("roster-modal").classList.add("open");
+}
+function closeRosterModal(){ $("roster-modal").classList.remove("open"); }
+function commitRoster(msg){
+  rosterDoc.updatedAt = Date.now(); rosterDoc.pending = true;
+  saveRosterLocal(); refreshRosterNames();
+  closeRosterModal(); renderRosterScreen();
+  if(msg) toast(msg);
+  pushRoster();
+}
+function saveRosterModal(){
+  var p = rosterEditKey ? rosterDoc.players.find(function(x){ return x.key===rosterEditKey; }) : null;
+  var name = $("rm-name").value.trim().replace(/\s+/g," ");
+  if(!name){ toast("名前を入れてください"); return; }
+  var clash = rosterDoc.players.find(function(x){ return x!==p && x.name===name; });
+  if(clash){ toast("同じ名前の選手がすでにいます"); return; }
+  var num = $("rm-number").value.trim().replace(/[^0-9]/g,"");
+  var dup = num && rosterDoc.players.find(function(x){ return x!==p && x.active!==false && x.number===num; });
+  if(dup && !confirm("背番号 "+num+" は "+dup.name+" と同じです。このまま保存しますか?")) return;
+  var vals = { name: p && ROSTER_BASE.some(function(b){ return b.key===p.key; }) ? p.name : name,
+    number:num, position:$("rm-position").value, sub_position:$("rm-subpos").value.trim(),
+    throws:$("rm-throws").value, bats:$("rm-bats").value, age:$("rm-age").value.replace(/[^0-9]/g,""),
+    role_and_join_year:$("rm-role").value.trim(), career:$("rm-career").value.trim(), pr:$("rm-pr").value.trim() };
+  if(p){
+    var oldName = p.name;
+    Object.keys(vals).forEach(function(k){ p[k] = vals[k]; });
+    if(oldName!==p.name && G) renameInGame(oldName, p.name);
+    commitRoster("保存しました");
+  } else {
+    var np = cleanRosterEntry(vals); np.key = "new_" + uid();
+    rosterDoc.players.push(np);
+    commitRoster(np.name + " を追加しました");
+  }
+}
+// 入力中の試合で使っている名前も追従させる(追加選手の名前を直した時)
+function renameInGame(oldName, newName){
+  (G.lineup||[]).forEach(function(r){ if(r.name===oldName) r.name=newName; });
+  (G.atBats||[]).forEach(function(a){ if(a.batter===oldName) a.batter=newName; });
+  (G.pitchers||[]).forEach(function(x){ if(x.name===oldName) x.name=newName; });
+  if(G.tally && G.tally[oldName] && !G.tally[newName]){ G.tally[newName]=G.tally[oldName]; delete G.tally[oldName]; }
+  save();
+}
+function toggleRetireRosterModal(){
+  var p = rosterDoc.players.find(function(x){ return x.key===rosterEditKey; });
+  if(!p) return;
+  if(p.active!==false && !confirm(p.name+" を退団にします。過去の成績はサイトに残り、試合の選手リストからは外れます。よろしいですか?")) return;
+  p.active = (p.active===false);
+  commitRoster(p.active ? "在籍に戻しました" : "退団にしました");
+}
+function deleteRosterModal(){
+  var p = rosterDoc.players.find(function(x){ return x.key===rosterEditKey; });
+  if(!p) return;
+  if(!confirm(p.name+" を名簿から完全に削除します。（もう試合に出ている場合は「退団」がおすすめです）よろしいですか?")) return;
+  rosterDoc.players = rosterDoc.players.filter(function(x){ return x!==p; });
+  commitRoster("削除しました");
+}
+
 /* ============ 起動 ============ */
 (function init(){
   // 守備位置ボタンを両モーダルへ
@@ -1728,6 +2151,7 @@ function bindSheet(){
   $("off-pos").innerHTML = posHtml;
   $("def-pos").innerHTML = posHtml;
 
+  initRoster();
   bindSetup();
   bindSheet();
   bindPersistenceGuards();

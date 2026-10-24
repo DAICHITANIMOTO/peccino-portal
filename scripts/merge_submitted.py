@@ -24,7 +24,17 @@ from pos_maps import (
 TYPE_TO_DETAIL = {"ゴロ": "ゴロ", "フライ": "フライ", "ライナー": "ライナー", "内野フライ": "内フライ"}
 
 # 打球が「飛んだ」= スプレーチャート/打席内容の対象になる結果
-BATTED_RESULTS = {"アウト", "単打", "二塁打", "三塁打", "本塁打", "失策出塁"}
+BATTED_RESULTS = {"アウト", "単打", "内野安打", "二塁打", "三塁打", "本塁打", "失策出塁", "併殺打"}
+
+# 試合区分。入力アプリの選択肢(練習試合 / 公式戦=リーグ戦)を teams.one 由来データと同じ語彙に揃える
+GAME_CATEGORIES = {"練習試合": "練習試合", "公式戦": "公式戦", "リーグ戦": "公式戦"}
+
+# 投手の勝敗記号(teams.one 由来データと同じ)
+PITCH_DECISIONS = {"勝", "負", "S", "H"}
+
+# 選手名簿ファイル。submitted-games/ に試合と同居させる(送信 Worker の id 形式 YYYY-MM-DD_xxx に合わせるため日付部は 0000-00-00)
+ROSTER_PREFIX = "0000-00-00_"
+ROSTER_STEM = ROSTER_PREFIX + "roster"
 
 # 守備位置(1-9) -> 打球方向。打者の左右で引っ張り/流しが入れ替わる。
 _DIR_RIGHT = {5: "引っ張り", 6: "引っ張り", 7: "引っ張り",
@@ -106,6 +116,8 @@ def validate_submission(obj: dict) -> None:
 def load_submitted(dirpath: str) -> list[dict]:
     out: list[dict] = []
     for path in sorted(Path(dirpath).glob("*.json")):
+        if path.stem.startswith(ROSTER_PREFIX):
+            continue  # 名簿など試合以外のファイル(load_roster が読む)
         try:
             obj = json.loads(path.read_text(encoding="utf-8"))
             validate_submission(obj)
@@ -155,7 +167,7 @@ def game_entry_from_submission(sub: dict) -> dict:
         "game_id": game_id_for(sub),
         "date": disp,
         "date_sort": sort,
-        "category": "練習試合",
+        "category": GAME_CATEGORIES.get(g.get("category") or "", "練習試合"),
         "opponent": g["opponent"],
         "place": g.get("place", ""),
         "result": result,
@@ -194,7 +206,8 @@ def _pa_notation(ab: dict) -> str:
         return res
     pos = ab.get("position")
     tc = {"ゴロ": "ゴ", "フライ": "飛", "ライナー": "直", "内野フライ": "内"}.get(ab.get("ballType"), "")
-    short = {"単打": "安", "二塁打": "二", "三塁打": "三", "本塁打": "本", "失策出塁": "失"}.get(res, "")
+    short = {"単打": "安", "内野安打": "内安", "二塁打": "二", "三塁打": "三", "本塁打": "本",
+             "失策出塁": "失", "併殺打": "併"}.get(res, "")
     return f"{'' if pos is None else pos}{short}{tc}"
 
 
@@ -297,6 +310,8 @@ def batting_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
             row["sf"] += 1
         elif res == "失策出塁":
             row["error_reach"] += 1
+        elif res == "併殺打":
+            row["gdp"] += 1
 
     # タリー(打点/得点/失策/盗塁/盗塁死)を反映
     for name, t in tally.items():
@@ -382,6 +397,10 @@ def pitching_logs_from_manual(sub: dict, roster: dict) -> list[dict]:
         row["innings"] = round(int(p.get("outs", 0) or 0) / 3, 4)
         for f in MANUAL_PITCH_FIELDS:
             row[f] = int(p.get(f, 0) or 0)
+        dec = p.get("decision")
+        if dec in PITCH_DECISIONS:
+            row["decision"] = dec
+        row["pitches"] = max(0, int(p.get("pitches", 0) or 0))
         rows.append(row)
     return rows
 
@@ -414,6 +433,8 @@ def pitching_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
         res = dp["result"]
         if res in ("アウト", "三振"):
             outs[pitcher] += 1
+        elif res == "併殺":
+            outs[pitcher] += 2
         if res == "三振":
             row["so"] += 1
         elif res == "安打":
@@ -432,9 +453,84 @@ def pitching_logs_from_submission(sub: dict, roster: dict) -> list[dict]:
     return list(rows.values())
 
 
-def merge(base: dict, submissions: list[dict]) -> dict:
+ROSTER_TEXT_FIELDS = ("number", "position", "sub_position", "role_and_join_year", "career", "pr")
+
+
+def load_roster(dirpath: str) -> dict | None:
+    """submitted-games/0000-00-00_roster.json(入力アプリの「選手名簿」)を読む。無い・壊れていれば None。"""
+    path = Path(dirpath) / f"{ROSTER_STEM}.json"
+    if not path.exists():
+        return None
+    try:
+        obj = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, ValueError) as e:
+        print(f"[skip] {path.name}: {e}", file=sys.stderr)
+        return None
+    if not isinstance(obj, dict) or not isinstance(obj.get("players"), list):
+        print(f"[skip] {path.name}: players が list でない", file=sys.stderr)
+        return None
+    return obj
+
+
+def _main_info(position: str, throws: str, bats: str, age: str, prev: str) -> str:
+    # スタッフは teams.one 由来の「コーチ」「マネージャー」等の肩書きを残す
+    head = position
+    if position.startswith("スタッフ"):
+        head = (prev.split(" / ")[0] if prev else "") or "スタッフ"
+    parts = [head]
+    if throws or bats:
+        parts.append(f"{throws}{bats}")
+    if age:
+        parts.append(f"{age}歳")
+    return " / ".join(p for p in parts if p)
+
+
+def apply_roster(out: dict, roster: dict | None) -> None:
+    """名簿の追加・編集・退団を players に反映する(冪等)。
+    既存選手は key(=元の名前)で突き合わせ、名前は変えない(成績の紐付けが名前なので)。"""
+    if not roster:
+        return
+    players = out.setdefault("players", [])
+    by_name = {p["name"]: p for p in players}
+    for e in roster.get("players", []):
+        if not isinstance(e, dict):
+            continue
+        name = str(e.get("name") or "").strip()
+        key = str(e.get("key") or name).strip()
+        p = by_name.get(key) or by_name.get(name)
+        if p is None:
+            if not name:
+                continue
+            p = {"number": "", "name": name, "main_info": "", "position": "", "sub_position": "",
+                 "throw_bat": "", "role_and_join_year": "", "career": "-", "pr": "-"}
+            players.append(p)
+            by_name[name] = p
+        for f in ROSTER_TEXT_FIELDS:
+            if e.get(f) is not None:
+                v = str(e[f]).strip()
+                p[f] = v if (v or f not in ("career", "pr")) else "-"
+        throws = str(e.get("throws") or "").strip()
+        bats = str(e.get("bats") or "").strip()
+        if throws in ("右", "左") and bats in ("右", "左", "両"):
+            p["throw_bat"] = f"{throws}投 / {bats}打"
+        else:
+            throws = bats = ""
+        age = str(e.get("age") or "").strip()
+        if not age:
+            m = re.search(r"(\d+)歳", p.get("main_info", ""))
+            age = m.group(1) if m else ""
+        if not throws:
+            tb = p.get("throw_bat", "")
+            throws = "左" if "左投" in tb else ("右" if "右投" in tb else "")
+            bats = "両" if "両打" in tb else ("左" if "左打" in tb else ("右" if "右打" in tb else ""))
+        p["main_info"] = _main_info(p.get("position", ""), throws, bats, age, p.get("main_info", ""))
+        p["active"] = e.get("active", True) is not False
+
+
+def merge(base: dict, submissions: list[dict], roster_file: dict | None = None) -> dict:
     import copy as _copy
     out = _copy.deepcopy(base)
+    apply_roster(out, roster_file)
     roster = roster_index(out)
     bats = roster_bats(out)
 
@@ -498,7 +594,7 @@ def main(argv: list[str] | None = None) -> int:
     base = json.loads(Path(args.base).read_text(encoding="utf-8"))
     base_game_count = len(base["games"])
     submissions = load_submitted(args.submitted)
-    merged = merge(base, submissions)
+    merged = merge(base, submissions, load_roster(args.submitted))
 
     # 安全策: 出力を検証してから移動
     text = json.dumps(merged, ensure_ascii=False, separators=(",", ":"))
