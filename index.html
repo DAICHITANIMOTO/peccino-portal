@@ -1033,7 +1033,7 @@ function renderMilestoneRow(list, stats) {
 }
 
 function renderRanking(main) {
-  const gameIdSet = new Set(gamesForFilter({ year: rankingState.year }).map(g => g.game_id));
+  const gameIdSet = new Set(gamesForFilter({ year: rankingState.year, category: rankingState.category || 'all' }).map(g => g.game_id));
   const isBatting = rankingState.kind === 'batting';
   const metrics = isBatting ? BATTING_METRICS : PITCHING_METRICS;
   if (!metrics.find(m => m[0] === rankingState.metric)) rankingState.metric = metrics[0][0];
@@ -1059,6 +1059,11 @@ function renderRanking(main) {
       <select id="year-select">
         <option value="all" ${rankingState.year === 'all' ? 'selected' : ''}>全期間</option>
         ${YEARS.map(y => `<option value="${y}" ${rankingState.year === y ? 'selected' : ''}>${y}年</option>`).join('')}
+      </select>
+      <select id="rank-cat-select">
+        <option value="all" ${(rankingState.category || 'all') === 'all' ? 'selected' : ''}>全試合</option>
+        <option value="公式戦" ${rankingState.category === '公式戦' ? 'selected' : ''}>公式戦のみ</option>
+        <option value="練習試合" ${rankingState.category === '練習試合' ? 'selected' : ''}>練習試合のみ</option>
       </select>
       <select id="metric-select">
         ${metrics.map(([k, label]) => `<option value="${k}" ${rankingState.metric === k ? 'selected' : ''}>${esc(label)}</option>`).join('')}
@@ -1092,6 +1097,7 @@ function renderRanking(main) {
   }));
   main.querySelector('#year-select').addEventListener('change', e => { rankingState.year = e.target.value; renderRanking(main); });
   main.querySelector('#metric-select').addEventListener('change', e => { rankingState.metric = e.target.value; renderRanking(main); });
+  main.querySelector('#rank-cat-select').addEventListener('change', e => { rankingState.category = e.target.value; renderRanking(main); });
   main.querySelectorAll('tbody tr.clickable').forEach(tr => tr.addEventListener('click', () => goTo(`/players/${encodeURIComponent(tr.dataset.name)}`)));
 }
 
@@ -1099,15 +1105,26 @@ function renderRanking(main) {
 let playerFilter = { position: 'all', q: '' };
 function renderPlayers(main) {
   const positions = [...new Set(players.map(p => p.position).filter(Boolean))];
-  let list = players.filter(p => {
+  let all = players.filter(p => {
     if (playerFilter.position !== 'all' && p.position !== playerFilter.position) return false;
     if (playerFilter.q && !p.name.includes(playerFilter.q)) return false;
     return true;
   });
-  list = [...list].sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999));
+  all = [...all].sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999));
+  // 入力アプリの選手名簿で「退団」にした人(active === false)は下の「退団・OB」にまとめる
+  const list = all.filter(p => p.active !== false);
+  const retired = all.filter(p => p.active === false);
+  const playerCard = p => `
+        <a class="card player-card" ${linkAttr('/players/' + encodeURIComponent(p.name))}>
+          <span class="num-badge">${esc(p.number)}</span>
+          <span>
+            <div class="p-name">${esc(p.name)}</div>
+            <div class="p-meta">${esc(p.position || p.main_info || '')}</div>
+          </span>
+        </a>`;
 
   main.innerHTML = `
-    <p class="page-sub">全${players.length}名(選手・コーチ・マネージャー含む)</p>
+    <p class="page-sub">在籍${players.filter(p => p.active !== false).length}名(選手・コーチ・マネージャー含む)</p>
     <div style="margin-bottom:14px;"><a class="back-link" style="margin-bottom:0" ${linkAttr('/awards')}>🏆 表彰・タイトル一覧を見る →</a></div>
 
     <div class="filter-bar">
@@ -1122,16 +1139,13 @@ function renderPlayers(main) {
     </div>
 
     <div class="roster-grid">
-      ${list.map(p => `
-        <a class="card player-card" ${linkAttr('/players/' + encodeURIComponent(p.name))}>
-          <span class="num-badge">${esc(p.number)}</span>
-          <span>
-            <div class="p-name">${esc(p.name)}</div>
-            <div class="p-meta">${esc(p.position || p.main_info || '')}</div>
-          </span>
-        </a>
-      `).join('') || `<div class="empty-state">該当するメンバーがいません</div>`}
+      ${list.map(playerCard).join('') || `<div class="empty-state">該当するメンバーがいません</div>`}
     </div>
+    ${retired.length ? `
+    <details class="retired-block" style="margin-top:18px">
+      <summary class="section-title" style="cursor:pointer">退団・OB(${retired.length}名)</summary>
+      <div class="roster-grid" style="margin-top:10px; opacity:.75">${retired.map(playerCard).join('')}</div>
+    </details>` : ''}
   `;
 
   main.querySelector('#q').addEventListener('input', e => { playerFilter.q = e.target.value; renderPlayers(main); });
@@ -1328,6 +1342,7 @@ function renderPlayerDetail(main, name) {
           ${player?.throw_bat ? `<span class="tag">${esc(player.throw_bat)}</span>` : ''}
           ${player?.role_and_join_year ? `<span class="tag">${esc(player.role_and_join_year)}</span>` : ''}
           ${!player ? `<span class="tag">ゲスト選手(名鑑外)</span>` : ''}
+          ${player?.active === false ? `<span class="tag">退団・OB</span>` : ''}
         </div>
       </div>
     </div>
@@ -1642,7 +1657,7 @@ function renderGameDetail(main, gameId) {
             ${(l.pa_log || []).map(n => `<span class="pa-log-chip">${esc(n)}</span>`).join('')}
           </div>`).join('')}
       </div>
-      <p class="spray-caption" style="text-align:left;margin-top:8px">数字=守備位置(1投2捕3一4二5三6遊7左8中9右)　ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ　安=単打 二/三=塁打 本=本塁打 失=相手失策</p>
+      <p class="spray-caption" style="text-align:left;margin-top:8px">数字=守備位置(1投2捕3一4二5三6遊7左8中9右)　ゴ=ゴロ 飛=フライ 直=ライナー 内=内野フライ　安=単打 内安=内野安打 二/三=塁打 本=本塁打 失=相手失策 併=併殺打</p>
     </section>` : ''}
 
     ${pitching.length ? `
@@ -1650,11 +1665,12 @@ function renderGameDetail(main, gameId) {
       <h2 class="section-title">投球成績</h2>
       <div class="card table-wrap">
         <table>
-          <thead><tr><th>#</th><th>選手</th><th class="num-h">勝敗</th><th class="num-h">投球回</th><th class="num-h">失点</th><th class="num-h">自責点</th><th class="num-h">被安打</th><th class="num-h">奪三振</th></tr></thead>
+          <thead><tr><th>#</th><th>選手</th><th class="num-h">勝敗</th><th class="num-h">投球回</th>${pitching.some(l => l.pitches > 0) ? '<th class="num-h">球数</th>' : ''}<th class="num-h">失点</th><th class="num-h">自責点</th><th class="num-h">被安打</th><th class="num-h">奪三振</th><th class="num-h">四死球</th></tr></thead>
           <tbody>
             ${pitching.map(l => `<tr class="clickable" data-name="${esc(l.name)}">
               <td class="num">${esc(l.number)}</td><td>${esc(l.name)}</td><td class="num">${esc(l.decision)}</td><td class="num">${fmtInnings(l.innings)}</td>
-              <td class="num">${l.r}</td><td class="num">${l.er}</td><td class="num">${l.h}</td><td class="num">${l.so}</td>
+              ${pitching.some(x => x.pitches > 0) ? `<td class="num">${l.pitches || '-'}</td>` : ''}
+              <td class="num">${l.r}</td><td class="num">${l.er}</td><td class="num">${l.h}</td><td class="num">${l.so}</td><td class="num">${(l.bb || 0) + (l.hbp || 0)}</td>
             </tr>`).join('')}
           </tbody>
         </table>

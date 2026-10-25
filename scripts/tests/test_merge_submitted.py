@@ -477,3 +477,122 @@ def test_merge_skips_detail_for_non_2026_game():
     sub["game"]["date"] = "2025-08-30"
     merged = ms.merge(base, [sub])
     assert merged["detail_2026"] == {}  # 2025年の試合は detail に足さない
+
+
+# ===== v2: 内野安打・併殺打 / 試合区分 / 勝敗・球数 / 選手名簿 =====
+
+def _sub_with_atbats(extra):
+    sub = load_fixture("game_normal.json")
+    sub["atBats"].extend(extra)
+    return sub
+
+
+def test_infield_hit_counts_as_single_hit():
+    sub = _sub_with_atbats([{"order": 7, "batter": "榊原健斗", "inning": 2, "pa": 1,
+                             "result": "内野安打", "position": 6, "ballType": "ゴロ", "notation": "6内安ゴ"}])
+    ms.validate_submission(sub)
+    rows = {r["name"]: r for r in ms.batting_logs_from_submission(sub, {})}
+    r = rows["榊原健斗"]
+    assert (r["pa"], r["ab"], r["h"], r["double"], r["gdp"]) == (1, 1, 1, 0, 0)
+    assert r["pa_log"] == ["6内安ゴ"]
+    balls = ms.batted_balls_from_submission(sub, {"榊原健斗": "左"})["榊原健斗"]
+    assert balls == [{"direction": "流し", "type": "ゴロ", "hit": True, "src": "app"}]
+
+
+def test_double_play_counts_gdp_and_at_bat():
+    sub = _sub_with_atbats([{"order": 8, "batter": "Yuito", "inning": 2, "pa": 1,
+                             "result": "併殺打", "position": 6, "ballType": "ゴロ"}])
+    ms.validate_submission(sub)
+    r = {x["name"]: x for x in ms.batting_logs_from_submission(sub, {})}["Yuito"]
+    assert (r["pa"], r["ab"], r["h"], r["gdp"]) == (1, 1, 0, 1)
+    assert r["pa_log"] == ["6併ゴ"]  # notation が無くても組み立てる
+    balls = ms.batted_balls_from_submission(sub, {})["Yuito"]
+    assert balls[0]["hit"] is False
+
+
+def test_defense_double_play_is_valid_and_counts_two_outs_in_fallback():
+    sub = load_fixture("game_normal.json")
+    sub["defense"].append({"seq": 7, "inning": 3, "result": "併殺", "fielder": 6, "ballType": "ゴロ", "runsAllowed": 0})
+    ms.validate_submission(sub)
+    rows = ms.pitching_logs_from_submission(sub, {})
+    assert rows[0]["innings"] == 2.0  # アウト3 + 三振1 + 併殺2 = 6アウト
+
+
+def test_game_category_from_submission():
+    sub = load_fixture("game_normal.json")
+    assert ms.game_entry_from_submission(sub)["category"] == "練習試合"  # 旧データは練習試合扱い
+    sub["game"]["category"] = "公式戦"
+    assert ms.game_entry_from_submission(sub)["category"] == "公式戦"
+    sub["game"]["category"] = "リーグ戦"
+    assert ms.game_entry_from_submission(sub)["category"] == "公式戦"
+    sub["game"]["category"] = "謎"
+    assert ms.game_entry_from_submission(sub)["category"] == "練習試合"
+
+
+def test_manual_pitching_decision_and_pitches():
+    sub = load_fixture("game_normal.json")
+    sub["pitchers"] = [
+        {"order": 1, "name": "中村駿", "outs": 15, "r": 1, "er": 1, "decision": "勝", "pitches": 78},
+        {"order": 2, "name": "藤原湧", "outs": 6, "decision": "S", "pitches": "31"},
+        {"order": 3, "name": "末光弘明", "outs": 0, "decision": "謎"},
+    ]
+    rows = ms.pitching_logs_from_submission(sub, {})
+    assert [(r["decision"], r["pitches"]) for r in rows] == [("勝", 78), ("S", 31), ("-", 0)]
+
+
+def test_roster_file_is_not_loaded_as_game(tmp_path):
+    (tmp_path / "0000-00-00_roster.json").write_text(json.dumps({"players": []}), encoding="utf-8")
+    (tmp_path / "g.json").write_text(json.dumps(load_fixture("game_normal.json"), ensure_ascii=False), encoding="utf-8")
+    assert len(ms.load_submitted(str(tmp_path))) == 1
+    assert ms.load_roster(str(tmp_path)) == {"players": []}
+
+
+def test_load_roster_missing_or_broken(tmp_path):
+    assert ms.load_roster(str(tmp_path)) is None
+    (tmp_path / "0000-00-00_roster.json").write_text("{ broken", encoding="utf-8")
+    assert ms.load_roster(str(tmp_path)) is None
+
+
+def _base_players():
+    return {"players": [{"number": "1", "name": "谷本大知", "main_info": "内野手 / 右右 / 24歳", "position": "内野手",
+                         "sub_position": "投手", "throw_bat": "右投 / 右打", "role_and_join_year": "2024年度入団",
+                         "career": "-", "pr": "チームの顔"},
+                        {"number": "72", "name": "将軍", "main_info": "コーチ / 右右 / 498歳",
+                         "position": "スタッフ（選手以外）", "sub_position": "", "throw_bat": "右投 / 右打",
+                         "role_and_join_year": "記録員", "career": "-", "pr": "-"}],
+            "games": [], "batting_logs": [], "pitching_logs": []}
+
+
+def test_apply_roster_edit_add_retire_and_idempotent():
+    roster = {"players": [
+        {"key": "谷本大知", "name": "谷本 改名しない", "number": "10", "throws": "右", "bats": "左", "pr": "新しい紹介"},
+        {"key": "将軍", "name": "将軍", "active": False},
+        {"key": "new_abc", "name": "新人太郎", "number": "50", "position": "外野手", "throws": "左", "bats": "左",
+         "age": "22", "role_and_join_year": "2026年度入団", "pr": ""},
+    ]}
+    out = ms.merge(_base_players(), [], roster)
+    by = {p["name"]: p for p in out["players"]}
+    t = by["谷本大知"]  # 改名はしない(成績が名前で紐づくため)
+    assert (t["number"], t["throw_bat"], t["main_info"], t["pr"], t["active"]) == \
+        ("10", "右投 / 左打", "内野手 / 右左 / 24歳", "新しい紹介", True)
+    assert by["将軍"]["active"] is False and by["将軍"]["main_info"] == "コーチ / 右右 / 498歳"
+    n = by["新人太郎"]
+    assert (n["number"], n["main_info"], n["throw_bat"], n["pr"], n["career"]) == \
+        ("50", "外野手 / 左左 / 22歳", "左投 / 左打", "-", "-")
+    assert ms.roster_index(out)["新人太郎"] == "50"
+    out2 = ms.merge(out, [], roster)
+    assert out2["players"] == out["players"]
+
+
+def test_new_roster_player_gets_number_in_batting_logs():
+    base = _base_players()
+    roster = {"players": [{"key": "new_x", "name": "新人太郎", "number": "50", "position": "外野手"}]}
+    sub = load_fixture("game_normal.json")
+    sub["lineup"][0]["name"] = "新人太郎"
+    for ab in sub["atBats"]:
+        if ab["order"] == 1:
+            ab["batter"] = "新人太郎"
+    sub["_stem"] = "2026-08-30_神戸グフ"
+    out = ms.merge(base, [sub], roster)
+    row = next(b for b in out["batting_logs"] if b["name"] == "新人太郎")
+    assert row["number"] == "50" and row["is_roster_member"] is True
