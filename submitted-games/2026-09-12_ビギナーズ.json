@@ -1,13 +1,14 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-09-12T07:24:45.197Z",
+  "exportedAt": "2026-10-25T13:48:08.051Z",
   "game": {
     "date": "2026-09-12",
     "opponent": "ビギナーズ",
     "place": "瀬戸公園野球場",
     "firstAttack": false,
-    "recordedBy": "榊原健斗"
+    "recordedBy": "榊原健斗",
+    "category": "公式戦"
   },
   "lineup": [
     {
@@ -453,7 +454,9 @@
       "bb": 2,
       "hbp": 0,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "",
+      "pitches": 50
     },
     {
       "order": 2,
@@ -467,7 +470,9 @@
       "bb": 1,
       "hbp": 2,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "負",
+      "pitches": 54
     }
   ],
   "linescore": {
@@ -511,6 +516,6 @@
     }
   ],
   "finalState": {
-    "inning": 5
+    "inning": 1
   }
 }
