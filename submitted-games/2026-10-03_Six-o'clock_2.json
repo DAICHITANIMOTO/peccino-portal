@@ -1,13 +1,14 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-10-05T04:33:55.456Z",
+  "exportedAt": "2026-10-25T13:50:37.469Z",
   "game": {
     "date": "2026-10-03",
     "opponent": "Six o'clock",
     "place": "瀬戸公園野球場",
     "firstAttack": true,
-    "recordedBy": "将軍"
+    "recordedBy": "将軍",
+    "category": "練習試合"
   },
   "lineup": [
     {
@@ -595,7 +596,9 @@
       "bb": 1,
       "hbp": 0,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "",
+      "pitches": 25
     },
     {
       "order": 2,
@@ -609,7 +612,9 @@
       "bb": 2,
       "hbp": 1,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "",
+      "pitches": 56
     },
     {
       "order": 3,
@@ -623,7 +628,9 @@
       "bb": 2,
       "hbp": 1,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "",
+      "pitches": 15
     },
     {
       "order": 4,
@@ -637,7 +644,9 @@
       "bb": 4,
       "hbp": 0,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "勝",
+      "pitches": 59
     }
   ],
   "linescore": {
