@@ -1,13 +1,14 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-10-19T05:13:25.980Z",
+  "exportedAt": "2026-10-25T13:51:56.652Z",
   "game": {
     "date": "2026-10-17",
     "opponent": "藻川アルバトロス",
     "place": "瀬戸公園野球場",
     "firstAttack": false,
-    "recordedBy": "将軍"
+    "recordedBy": "将軍",
+    "category": "公式戦"
   },
   "lineup": [
     {
@@ -419,7 +420,9 @@
       "bb": 5,
       "hbp": 1,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "勝",
+      "pitches": 0
     },
     {
       "order": 2,
@@ -433,7 +436,9 @@
       "bb": 2,
       "hbp": 0,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "H",
+      "pitches": 0
     }
   ],
   "linescore": {
