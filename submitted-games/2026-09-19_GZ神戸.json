@@ -1,13 +1,14 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-09-20T14:53:10.244Z",
+  "exportedAt": "2026-10-25T13:49:01.207Z",
   "game": {
     "date": "2026-09-19",
     "opponent": "GZ神戸",
     "place": "大倉山公園野球場",
     "firstAttack": true,
-    "recordedBy": "将軍"
+    "recordedBy": "将軍",
+    "category": "練習試合"
   },
   "lineup": [
     {
@@ -419,7 +420,9 @@
       "bb": 1,
       "hbp": 1,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "",
+      "pitches": 32
     },
     {
       "order": 2,
@@ -433,7 +436,9 @@
       "bb": 0,
       "hbp": 1,
       "wp": 0,
-      "note": ""
+      "note": "",
+      "decision": "負",
+      "pitches": 30
     }
   ],
   "linescore": {
@@ -458,6 +463,6 @@
   },
   "substitutions": [],
   "finalState": {
-    "inning": 3
+    "inning": 1
   }
 }
