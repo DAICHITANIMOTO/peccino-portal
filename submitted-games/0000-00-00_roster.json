@@ -1,7 +1,7 @@
 {
   "app": "peccino-roster",
   "version": 1,
-  "updatedAt": 1792937263814,
+  "updatedAt": 1792937311943,
   "players": [
     {
       "key": "谷本大知",
@@ -295,6 +295,20 @@
       "role_and_join_year": "2026年度入団",
       "career": "",
       "pr": "鍛えられた脚力で快足飛ばすスプリンター。\n本職は内野だが外野でも広い守備範囲を持ちチーム戦略の柔軟性に大きく貢献。\n力強い打撃が徐々に発揮されており、二塁打を量産するスプレーヒッターに期待。",
+      "active": true
+    },
+    {
+      "key": "new_mvnwkzwnp216d",
+      "name": "木藤聡敏",
+      "number": "36",
+      "position": "内野手",
+      "sub_position": "",
+      "throws": "右",
+      "bats": "左",
+      "age": "",
+      "role_and_join_year": "2026年度入団",
+      "career": "",
+      "pr": "",
       "active": true
     },
     {
