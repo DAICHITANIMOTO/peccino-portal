@@ -173,7 +173,17 @@ def game_entry_from_submission(sub: dict) -> dict:
         "result": result,
         "score_for": sf,
         "score_against": sa,
+        "linescore": linescore_from_submission(sub),
     }
+
+
+def linescore_from_submission(sub: dict) -> dict:
+    """入力アプリの linescore を {first, self, opp} に。末尾の未実施(None)は落とす。"""
+    ls = sub["linescore"]
+    rows = [[None if x is None else int(x) for x in ls[k]] for k in ("self", "opp")]
+    n = max((i + 1 for row in rows for i, v in enumerate(row) if v is not None), default=0)
+    first = "self" if sub["game"].get("firstAttack") else "opp"
+    return {"first": first, "self": rows[0][:n], "opp": rows[1][:n]}
 
 
 BATTING_ZERO_FIELDS = (

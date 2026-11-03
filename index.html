@@ -1,6 +1,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Peccino 成績ポータル</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="草野球チームPeccinoの試合結果・個人成績・ランキング">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Peccino">
+<meta property="og:title" content="Peccino 成績ポータル">
+<meta property="og:description" content="試合結果・スコアボード・個人成績・ランキング">
+<meta property="og:url" content="https://daichitanimoto.github.io/peccino-portal/">
+<meta property="og:image" content="https://daichitanimoto.github.io/peccino-portal/ogp.png">
+<meta name="twitter:card" content="summary">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Peccino">
@@ -469,6 +478,85 @@
     .roster-grid { grid-template-columns: repeat(3, 1fr); }
     .content { padding: 20px 24px 100px; }
   }
+
+  /* ---- スコアボード(ラインスコア) ---- */
+  .ls-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table.ls-table { min-width: 0; width: 100%; table-layout: auto; font-size: 13px; }
+  table.ls-table thead th { text-align: center; padding: 6px 2px; font-family: 'Oswald', sans-serif; font-size: 10.5px; }
+  table.ls-table thead th.ls-team-h { text-align: left; padding-left: 10px; font-family: inherit; }
+  table.ls-table tbody td { text-align: center; padding: 8px 2px; font-family: 'Oswald', sans-serif; color: var(--ink-muted); min-width: 20px; }
+  table.ls-table tbody td:first-child { font-family: inherit; color: var(--ink); }
+  table.ls-table tbody td:nth-child(2) { text-align: center; font-weight: 400; }
+  table.ls-table td.ls-team { text-align: left; padding-left: 10px; padding-right: 6px; max-width: 108px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 700; font-size: 12px; }
+  .ls-order { display: inline-block; font-size: 9px; color: var(--ink-faint); border: 1px solid var(--line); border-radius: 3px; padding: 0 3px; margin-right: 5px; font-weight: 700; vertical-align: 1px; }
+  table.ls-table td.ls-run { color: var(--ink); font-weight: 600; }
+  table.ls-table td.ls-run small { font-size: 9px; margin-left: 1px; }
+  table.ls-table td.ls-x { color: var(--ink-faint); }
+  table.ls-table td.ls-empty { color: var(--ink-faint); }
+  table.ls-table td.ls-tot, table.ls-table td.ls-h { font-size: 15px; font-weight: 700; color: var(--ink); border-left: 1px solid var(--line); padding: 8px 6px; }
+  table.ls-table td.ls-h { font-size: 13px; color: var(--ink-muted); font-weight: 400; }
+  table.ls-table td.ls-tot.lead { color: var(--accent); }
+  table.ls-table th.ls-tot-h, table.ls-table th.ls-h-h { border-left: 1px solid var(--line); padding: 6px 6px; }
+  table.ls-table tr.ls-self td.ls-team { color: var(--accent); }
+  table.ls-table.compact tbody td { padding: 6px 2px; }
+  table.ls-table.heat tbody td { color: var(--ink); font-size: 12px; padding: 7px 4px; }
+  table.ls-table.heat thead th { white-space: nowrap; padding: 6px 4px; }
+
+  .score-hero { padding: 16px 16px 6px; margin-bottom: 24px; }
+  .score-hero-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .score-hero-top .big { font-size: 28px; font-weight: 700; }
+  .share-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 700; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--line)); border-radius: 999px; padding: 6px 12px; background: transparent; cursor: pointer; font-family: inherit; }
+  .share-btn:active { transform: scale(0.96); }
+  .story-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+  .story-tag { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-muted); }
+  .story-tag.win { background: color-mix(in srgb, var(--win) 16%, transparent); color: var(--win); }
+  .story-tag.lose { background: color-mix(in srgb, var(--lose) 16%, transparent); color: var(--lose); }
+  .story-tag.accent { background: color-mix(in srgb, var(--amber) 16%, transparent); color: var(--amber); }
+  .g-story { font-size: 9px; font-weight: 700; color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); border-radius: 4px; padding: 0 4px; margin-left: 5px; white-space: nowrap; vertical-align: 1px; }
+  .decision-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--ink-muted); padding: 10px 2px 8px; border-top: 1px solid var(--line); margin-top: 6px; }
+  .decision-line b { display: inline-block; min-width: 18px; text-align: center; font-size: 10px; border-radius: 4px; padding: 1px 4px; margin-right: 4px; color: var(--accent-ink); background: var(--ink-muted); }
+  .decision-line b.d-win { background: var(--win); }
+  .decision-line b.d-lose { background: var(--lose); }
+  .decision-line b.d-save { background: var(--sky); }
+  .decision-line a { color: var(--ink); font-weight: 600; text-decoration: none; }
+
+  .flow-chart { padding: 6px 2px 10px; border-top: 1px solid var(--line); margin-top: 4px; }
+  .flow-chart svg { width: 100%; height: auto; display: block; }
+  .flow-chart text { font-size: 9px; fill: var(--ink-faint); font-family: 'Oswald', sans-serif; }
+  .flow-axis { stroke: var(--line); stroke-width: 1; }
+  .flow-self, .flow-opp { fill: none; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+  .flow-self { stroke: var(--accent); }
+  .flow-opp { stroke: var(--lose); stroke-dasharray: 4 3; opacity: 0.85; }
+  .flow-legend { display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--ink-muted); flex-wrap: wrap; }
+  .flow-legend .sw { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .flow-legend .sw.self { background: var(--accent); }
+  .flow-legend .sw.opp { background: var(--lose); margin-left: 6px; }
+  .flow-note { margin-left: auto; color: var(--ink-faint); }
+
+  .latest-game { display: block; padding: 14px 14px 8px; margin-bottom: 24px; color: inherit; text-decoration: none; }
+  .latest-game .lg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .latest-game .lg-label { font-size: 9.5px; letter-spacing: 0.1em; color: var(--ink-faint); font-weight: 700; }
+  .latest-game .lg-opp { font-weight: 700; font-size: 14px; }
+  .latest-game .lg-more { margin-left: auto; font-size: 11px; color: var(--accent); }
+
+  .trends-card { margin-bottom: 12px; }
+  .trends-card summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 12px 14px; font-weight: 700; font-size: 13px; }
+  .trends-card summary::-webkit-details-marker { display: none; }
+  .trends-card summary::after { content: "▾"; margin-left: 6px; color: var(--ink-faint); transition: transform .2s; }
+  .trends-card[open] summary::after { transform: rotate(180deg); }
+  .trends-sub { margin-left: auto; font-size: 11px; color: var(--ink-faint); font-weight: 400; }
+  .trends-body { padding: 0 12px 12px; }
+  .trend-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 12px; }
+  @media (min-width: 560px) { .trend-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .trend-tile { background: var(--surface-2); border-radius: var(--radius-sm); padding: 9px 10px; }
+  .trend-tile .tl { font-size: 10.5px; color: var(--ink-muted); }
+  .trend-tile .tv { font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .trend-tile .ts { font-size: 10.5px; color: var(--ink-faint); }
+  .trends-note { font-size: 11.5px; color: var(--ink-muted); margin: 10px 2px 0; }
+  .trends-note b { color: var(--ink); }
+
+  #portal-toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); background: var(--ink); color: var(--bg); font-size: 12.5px; font-weight: 600; padding: 9px 16px; border-radius: 999px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 1000; }
+  #portal-toast.show { opacity: 1; transform: translate(-50%, 0); }
 </style>
 
 <div class="app-shell">
@@ -790,6 +878,22 @@ window.addEventListener('hashchange', router);
 function linkAttr(hash) { return `href="#${hash}" data-link`; }
 
 // ---------- Dashboard ----------
+function latestGameCardHtml(g) {
+  const info = lineScoreInfo(g);
+  if (!g || !info) return '';
+  const md = g.date_sort ? g.date_sort.slice(5).replace('-', '/') : '';
+  return `
+    <a class="card latest-game" ${linkAttr('/games/' + encodeURIComponent(g.game_id))}>
+      <div class="lg-head">
+        <span class="lg-label">LATEST GAME ・ ${esc(md)}</span>
+        <span class="result-pill ${resultClass(g.result)}">${esc((g.result || '-').replace('ち', '').replace('け', ''))}</span>
+        <span class="lg-more">詳しく →</span>
+      </div>
+      ${info.tags.length ? `<div class="story-tags">${storyTagsHtml(info, { max: 3 })}</div>` : ''}
+      ${scoreboardHtml(g, info, { compact: true })}
+    </a>`;
+}
+
 function renderDashboard(main) {
   const seasonGames = gamesForFilter({ year: LATEST_YEAR });
   const gameIdSet = new Set(seasonGames.map(g => g.game_id));
@@ -840,6 +944,8 @@ function renderDashboard(main) {
         <div class="rec-sub">${esc(LATEST_YEAR)}シーズン ・ 全${seasonGames.length}試合の勝敗</div>
       </div>
     </div>
+
+    ${latestGameCardHtml(recent[0])}
 
     <section>
       <h2 class="section-title">打者リーダーボード</h2>
@@ -927,13 +1033,19 @@ function renderMypageShortcut() {
   }
 }
 
+function gameRowStory(g) {
+  const info = lineScoreInfo(g);
+  const t = info && info.tags.find(t => t.label === 'サヨナラ勝ち' || t.label === '逆転勝ち');
+  return t ? `<span class="g-story">${t.label === 'サヨナラ勝ち' ? 'サヨナラ' : '逆転'}</span>` : '';
+}
+
 function gameRowHtml(g) {
   const md = g.date_sort ? g.date_sort.slice(5).replace('-', '/') : '-';
   return `
     <a class="game-row" ${linkAttr('/games/' + encodeURIComponent(g.game_id))}>
       <span class="g-date num">${esc(md)}</span>
       <span class="g-main">
-        <span class="g-opponent">${g.category ? `<span class="category-tag">${esc(g.category === '公式戦' ? '公式' : '練習')}</span>` : ''}${esc(g.opponent || '(不明)')}</span>
+        <span class="g-opponent">${g.category ? `<span class="category-tag">${esc(g.category === '公式戦' ? '公式' : '練習')}</span>` : ''}${esc(g.opponent || '(不明)')}${gameRowStory(g)}</span>
       </span>
       <span class="g-score num">${g.score_for ?? '-'}-${g.score_against ?? '-'}</span>
       <span class="result-pill ${resultClass(g.result)}">${esc((g.result || '-').replace('ち', '').replace('け', ''))}</span>
@@ -1533,6 +1645,7 @@ function renderGamesList(body) {
       <span class="result-count">${list.length}試合</span>
     </div>
 
+    ${teamTrendsHtml(list)}
     <div class="card">
       ${list.map(g => gameRowHtml(g)).join('') || `<div class="empty-state">該当する試合がありません</div>`}
     </div>
@@ -1613,6 +1726,204 @@ function renderGamesCalendar(body) {
   });
 }
 
+// ---------- スコアボード(ラインスコア)・試合の流れ ----------
+// g.linescore = { first: 'self'|'opp', self: [各回の得点 or null], opp: [...] }
+function lineScoreInfo(g) {
+  const ls = g && g.linescore;
+  if (!ls || !Array.isArray(ls.self) || !Array.isArray(ls.opp)) return null;
+  const n = Math.max(ls.self.length, ls.opp.length);
+  if (!n) return null;
+  const pad = a => Array.from({ length: n }, (_, i) => (a[i] ?? null));
+  const self = pad(ls.self), opp = pad(ls.opp);
+  const selfFirst = ls.first !== 'opp';
+  const top = selfFirst ? self : opp, bottom = selfFirst ? opp : self;
+  const sum = a => a.reduce((t, v) => t + (v || 0), 0);
+  const topTotal = sum(top), bottomTotal = sum(bottom);
+
+  // 表裏ごとの途中経過(self/opp の累計)
+  const flow = [];
+  let s = 0, o = 0, firstScorer = null;
+  for (let i = 0; i < n; i++) {
+    for (const half of ['top', 'bottom']) {
+      const isSelf = (half === 'top') === selfFirst;
+      const v = (isSelf ? self : opp)[i];
+      if (v == null) continue;
+      if (isSelf) s += v; else o += v;
+      if (!firstScorer && v > 0) firstScorer = isSelf ? 'self' : 'opp';
+      flow.push({ inning: i + 1, half, s, o });
+    }
+  }
+  const last = n - 1;
+  // 最終回の裏が無いまま後攻がリード → X
+  const xBottom = bottom[last] == null && top[last] != null && bottomTotal > topTotal;
+  // サヨナラ: 後攻が最終回の裏に得点して、その直前はリードしていなかった
+  const walkoff = bottom[last] > 0 && bottomTotal > topTotal && bottomTotal - bottom[last] <= topTotal;
+
+  const won = g.result === '勝ち', lost = g.result === '負け';
+  const diffs = flow.map(f => f.s - f.o);
+  const tags = [];
+  if (walkoff) tags.push(selfFirst ? { label: 'サヨナラ負け', tone: 'lose' } : { label: 'サヨナラ勝ち', tone: 'win' });
+  if (won && diffs.some(d => d < 0)) tags.push({ label: '逆転勝ち', tone: 'win' });
+  if (lost && diffs.some(d => d > 0)) tags.push({ label: '逆転負け', tone: 'lose' });
+  if (won && g.score_against === 0) tags.push({ label: '完封勝ち', tone: 'win' });
+  let bigIdx = -1;
+  self.forEach((v, i) => { if (v >= 5 && (bigIdx < 0 || v > self[bigIdx])) bigIdx = i; });
+  if (bigIdx >= 0) tags.push({ label: `${bigIdx + 1}回に${self[bigIdx]}点`, tone: 'accent' });
+
+  return { n, self, opp, top, bottom, selfFirst, topTotal, bottomTotal, flow, firstScorer, xBottom, walkoff, tags };
+}
+
+function storyTagsHtml(info, { max = 9 } = {}) {
+  if (!info || !info.tags.length) return '';
+  return info.tags.slice(0, max).map(t => `<span class="story-tag ${t.tone}">${esc(t.label)}</span>`).join('');
+}
+
+// hits: { self, opp } (分からない側は null)
+function scoreboardHtml(g, info, { hits = null, compact = false } = {}) {
+  if (!info) return '';
+  const cols = Math.max(info.n, compact ? 0 : 7);
+  const oppName = g.opponent || '相手';
+  const rows = [
+    { isSelf: info.selfFirst, name: info.selfFirst ? 'Peccino' : oppName, vals: info.top, total: info.topTotal, isBottom: false },
+    { isSelf: !info.selfFirst, name: info.selfFirst ? oppName : 'Peccino', vals: info.bottom, total: info.bottomTotal, isBottom: true },
+  ];
+  const winTotal = Math.max(info.topTotal, info.bottomTotal);
+  const showH = !!hits;
+  const cell = (row, i) => {
+    const v = row.vals[i];
+    if (i >= info.n) return '<td class="ls-empty"></td>';
+    if (row.isBottom && i === info.n - 1) {
+      if (info.xBottom) return '<td class="ls-x">X</td>';
+      if (info.walkoff) return `<td class="ls-run">${v}<small>x</small></td>`;
+    }
+    if (v == null) return '<td class="ls-empty">-</td>';
+    return `<td class="${v > 0 ? 'ls-run' : ''}">${v}</td>`;
+  };
+  return `
+    <div class="ls-wrap">
+      <table class="ls-table ${compact ? 'compact' : ''}">
+        <thead><tr><th class="ls-team-h"></th>${Array.from({ length: cols }, (_, i) => `<th>${i + 1}</th>`).join('')}<th class="ls-tot-h">計</th>${showH ? '<th class="ls-h-h">安</th>' : ''}</tr></thead>
+        <tbody>
+          ${rows.map(r => `<tr class="${r.isSelf ? 'ls-self' : 'ls-opp'}">
+            <td class="ls-team"><span class="ls-order">${r.isBottom ? '後' : '先'}</span><span class="ls-name">${esc(r.name)}</span></td>
+            ${Array.from({ length: cols }, (_, i) => cell(r, i)).join('')}
+            <td class="ls-tot ${r.total === winTotal && info.topTotal !== info.bottomTotal ? 'lead' : ''}">${r.total}</td>
+            ${showH ? `<td class="ls-h">${(r.isSelf ? hits.self : hits.opp) ?? '-'}</td>` : ''}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// 回ごとの累計得点の推移(折れ線)。各回の終了時点で打つ
+function scoreFlowSvg(info) {
+  if (!info || info.n < 3) return '';
+  const pts = [{ s: 0, o: 0 }];
+  let s = 0, o = 0;
+  for (let i = 0; i < info.n; i++) { s += info.self[i] || 0; o += info.opp[i] || 0; pts.push({ s, o }); }
+  const W = 300, H = 96, padL = 20, padR = 8, padT = 8, padB = 16;
+  const maxY = Math.max(1, s, o);
+  const x = i => padL + (W - padL - padR) * i / info.n;
+  const y = v => padT + (H - padT - padB) * (1 - v / maxY);
+  const line = key => pts.map((p, i) => `${x(i).toFixed(1)},${y(p[key]).toFixed(1)}`).join(' ');
+  const labels = Array.from({ length: info.n }, (_, i) => `<text x="${x(i + 1).toFixed(1)}" y="${H - 3}" text-anchor="middle">${i + 1}</text>`).join('');
+  return `
+    <div class="flow-chart">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="得点の推移">
+        <line x1="${padL}" y1="${y(0)}" x2="${W - padR}" y2="${y(0)}" class="flow-axis"/>
+        <text x="${padL - 5}" y="${y(maxY) + 3}" text-anchor="end">${maxY}</text>
+        <text x="${padL - 5}" y="${y(0) + 3}" text-anchor="end">0</text>
+        ${labels}
+        <polyline points="${line('o')}" class="flow-opp"/>
+        <polyline points="${line('s')}" class="flow-self"/>
+      </svg>
+      <div class="flow-legend"><span class="sw self"></span>Peccino <span class="sw opp"></span>相手 <span class="flow-note">各回終了時点の累計得点</span></div>
+    </div>`;
+}
+
+// 試合一覧の上に出す「チームの傾向」(今の絞り込み対象の試合で集計)
+function teamTrendsHtml(list) {
+  const rows = list.map(g => ({ g, info: lineScoreInfo(g) })).filter(r => r.info);
+  if (rows.length < 3) return '';
+  const INN = 7; // 8回以降は「8回〜」にまとめる
+  const runs = Array(INN + 1).fill(0), allowed = Array(INN + 1).fill(0), cnt = Array(INN + 1).fill(0);
+  const rec = { first: [0, 0, 0], chased: [0, 0, 0] };
+  let comeback = 0, walkoff = 0;
+  for (const { g, info } of rows) {
+    for (let i = 0; i < info.n; i++) {
+      const k = Math.min(i, INN);
+      if (info.self[i] != null) runs[k] += info.self[i];
+      if (info.opp[i] != null) allowed[k] += info.opp[i];
+      if (info.self[i] != null || info.opp[i] != null) cnt[k]++;
+    }
+    const ri = g.result === '勝ち' ? 0 : g.result === '負け' ? 1 : 2;
+    if (info.firstScorer === 'self') rec.first[ri]++;
+    else if (info.firstScorer === 'opp') rec.chased[ri]++;
+    if (info.tags.some(t => t.label === '逆転勝ち')) comeback++;
+    if (info.tags.some(t => t.label === 'サヨナラ勝ち')) walkoff++;
+  }
+  const avgR = runs.map((v, i) => cnt[i] ? v / cnt[i] : 0);
+  const avgA = allowed.map((v, i) => cnt[i] ? v / cnt[i] : 0);
+  const maxAvg = Math.max(0.01, ...avgR, ...avgA);
+  const heat = (v, tone) => `style="background:color-mix(in srgb, var(--${tone}) ${Math.round(8 + 52 * v / maxAvg)}%, transparent)"`;
+  const pct = r => (r[0] + r[1]) ? Math.round(100 * r[0] / (r[0] + r[1])) + '%' : '-';
+  const bestR = avgR.indexOf(Math.max(...avgR)), worstA = avgA.indexOf(Math.max(...avgA));
+  const innLabel = i => i === INN ? `${INN + 1}回〜` : `${i + 1}回`;
+  return `
+    <details class="card trends-card">
+      <summary><span>📊 試合の流れの傾向</span><span class="trends-sub">${rows.length}試合で集計</span></summary>
+      <div class="trends-body">
+        <div class="trend-tiles">
+          <div class="trend-tile"><div class="tl">先制した試合</div><div class="tv num">${rec.first[0]}勝${rec.first[1]}敗${rec.first[2] ? rec.first[2] + '分' : ''}</div><div class="ts">勝率 ${pct(rec.first)}</div></div>
+          <div class="trend-tile"><div class="tl">先制された試合</div><div class="tv num">${rec.chased[0]}勝${rec.chased[1]}敗${rec.chased[2] ? rec.chased[2] + '分' : ''}</div><div class="ts">勝率 ${pct(rec.chased)}</div></div>
+          <div class="trend-tile"><div class="tl">逆転勝ち</div><div class="tv num">${comeback}</div><div class="ts">試合</div></div>
+          <div class="trend-tile"><div class="tl">サヨナラ勝ち</div><div class="tv num">${walkoff}</div><div class="ts">試合</div></div>
+        </div>
+        <div class="ls-wrap">
+          <table class="ls-table heat">
+            <thead><tr><th class="ls-team-h">1試合平均</th>${avgR.map((_, i) => `<th>${innLabel(i)}</th>`).join('')}</tr></thead>
+            <tbody>
+              <tr><td class="ls-team">得点</td>${avgR.map(v => `<td ${heat(v, 'win')}>${v.toFixed(1)}</td>`).join('')}</tr>
+              <tr><td class="ls-team">失点</td>${avgA.map(v => `<td ${heat(v, 'lose')}>${v.toFixed(1)}</td>`).join('')}</tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="trends-note">よく点を取るのは<b>${innLabel(bestR)}</b>、よく取られるのは<b>${innLabel(worstA)}</b>。上の絞り込み(年・公式/練習・相手)に連動します。</p>
+      </div>
+    </details>`;
+}
+
+function gameShareText(g) {
+  const md = g.date_sort ? g.date_sort.slice(5).replace('-', '/').replace(/^0/, '') : '';
+  const mark = g.result === '勝ち' ? '○' : g.result === '負け' ? '●' : '△';
+  const info = lineScoreInfo(g);
+  const tags = info && info.tags.length ? `(${info.tags.map(t => t.label).join('・')})` : '';
+  return `${md} vs ${g.opponent} ${mark} ${g.score_for}-${g.score_against} ${g.result || ''}${tags}`;
+}
+
+async function shareGame(g) {
+  const url = location.href;
+  const text = gameShareText(g);
+  if (navigator.share) {
+    try { await navigator.share({ title: 'Peccino 試合結果', text, url }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  try {
+    await navigator.clipboard.writeText(`${text}\n${url}`);
+    portalToast('結果とリンクをコピーしました');
+  } catch (e) {
+    portalToast('コピーできませんでした');
+  }
+}
+
+function portalToast(msg) {
+  let el = document.getElementById('portal-toast');
+  if (!el) { el = document.createElement('div'); el.id = 'portal-toast'; document.body.appendChild(el); }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
 // ---------- Game detail ----------
 function renderGameDetail(main, gameId) {
   const g = gameById[gameId] || gameById[decodeURIComponent(gameId)];
@@ -1620,15 +1931,29 @@ function renderGameDetail(main, gameId) {
   gameId = g.game_id;
   const batting = batting_logs.filter(l => l.game_id === gameId).sort((a, b) => a.order - b.order);
   const pitching = pitching_logs.filter(l => l.game_id === gameId).sort((a, b) => a.order - b.order);
+  const info = lineScoreInfo(g);
+  const hits = {
+    self: batting.length ? batting.reduce((t, l) => t + (l.h || 0), 0) : null,
+    opp: pitching.length ? pitching.reduce((t, l) => t + (l.h || 0), 0) : null,
+  };
+  const DEC = { '勝': ['勝', 'd-win'], '負': ['負', 'd-lose'], 'S': ['S', 'd-save'] };
+  const decisions = pitching.filter(l => DEC[l.decision]).map(l => ({ label: DEC[l.decision][0], cls: DEC[l.decision][1], name: l.name }));
 
   main.innerHTML = `
     <a class="back-link" ${linkAttr('/games')}>← 試合結果一覧へ</a>
     <h1 class="page-title">vs ${esc(g.opponent)}</h1>
     <p class="page-sub">${esc(g.date)} ・ ${esc(g.category || '')} ・ ${esc(g.place || '')}</p>
 
-    <div class="card" style="padding:16px 18px; margin-bottom:24px; display:flex; align-items:center; gap:14px;">
-      <span class="result-pill ${resultClass(g.result)}" style="font-size:12px; padding:5px 12px;">${esc(g.result || '-')}</span>
-      <span class="num" style="font-size:26px; font-weight:700;">${g.score_for} - ${g.score_against}</span>
+    <div class="card score-hero">
+      <div class="score-hero-top">
+        <span class="result-pill ${resultClass(g.result)}" style="font-size:12px; padding:5px 12px;">${esc(g.result || '-')}</span>
+        <span class="num big">${g.score_for} - ${g.score_against}</span>
+        <button class="share-btn" id="share-game" type="button">↗ 共有</button>
+      </div>
+      ${info && info.tags.length ? `<div class="story-tags">${storyTagsHtml(info)}</div>` : ''}
+      ${scoreboardHtml(g, info, { hits })}
+      ${decisions.length ? `<div class="decision-line">${decisions.map(d => `<span><b class="${d.cls}">${d.label}</b><a ${linkAttr('/players/' + encodeURIComponent(d.name))}>${esc(d.name)}</a></span>`).join('')}</div>` : ''}
+      ${scoreFlowSvg(info)}
     </div>
 
     ${batting.length ? `
@@ -1679,6 +2004,7 @@ function renderGameDetail(main, gameId) {
   `;
 
   main.querySelectorAll('tbody tr.clickable').forEach(tr => tr.addEventListener('click', () => goTo(`/players/${encodeURIComponent(tr.dataset.name)}`)));
+  main.querySelector('#share-game')?.addEventListener('click', () => shareGame(g));
 }
 
 // ---- 隠しギミック: ロゴを連打すると紙吹雪(要素はDOM再構築で消えないようbodyに直付け) ----

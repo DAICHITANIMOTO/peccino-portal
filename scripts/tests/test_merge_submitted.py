@@ -596,3 +596,20 @@ def test_new_roster_player_gets_number_in_batting_logs():
     out = ms.merge(base, [sub], roster)
     row = next(b for b in out["batting_logs"] if b["name"] == "新人太郎")
     assert row["number"] == "50" and row["is_roster_member"] is True
+
+
+def test_game_entry_has_linescore_trimmed_and_first_attack():
+    sub = load_fixture("game_normal.json")
+    sub["game"]["firstAttack"] = False
+    sub["linescore"] = {"self": [1, 0, 2, None, None], "opp": [0, 3, 0, None, None]}
+    e = ms.game_entry_from_submission(sub)
+    assert e["linescore"] == {"first": "opp", "self": [1, 0, 2], "opp": [0, 3, 0]}
+    assert (e["score_for"], e["score_against"]) == (3, 3)
+
+
+def test_game_entry_linescore_keeps_unplayed_bottom_as_none():
+    sub = load_fixture("game_normal.json")
+    sub["game"]["firstAttack"] = False
+    sub["linescore"] = {"self": [4, 0, None], "opp": [0, 1, 0]}
+    e = ms.game_entry_from_submission(sub)
+    assert e["linescore"] == {"first": "opp", "self": [4, 0, None], "opp": [0, 1, 0]}
