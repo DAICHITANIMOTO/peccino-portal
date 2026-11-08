@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-07T07:04:38.635Z",
+  "exportedAt": "2026-11-08T00:53:45.671Z",
   "game": {
     "date": "2026-11-07",
     "opponent": "ファンキージャンクファイブ(FJ5)",
@@ -459,7 +459,7 @@
       "cs": 0
     },
     "藤原巧翔": {
-      "rbi": 4,
+      "rbi": 5,
       "run": 2,
       "error": 0,
       "sb": 0,
