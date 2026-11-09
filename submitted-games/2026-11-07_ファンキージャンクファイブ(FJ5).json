@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-08T00:53:45.671Z",
+  "exportedAt": "2026-11-09T14:29:47.723Z",
   "game": {
     "date": "2026-11-07",
     "opponent": "ファンキージャンクファイブ(FJ5)",
@@ -530,7 +530,7 @@
       "wp": 0,
       "note": "",
       "decision": "勝",
-      "pitches": 0
+      "pitches": 73
     },
     {
       "order": 2,
@@ -546,7 +546,7 @@
       "wp": 0,
       "note": "",
       "decision": "H",
-      "pitches": 0
+      "pitches": 28
     }
   ],
   "linescore": {
