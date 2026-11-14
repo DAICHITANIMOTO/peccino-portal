@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-14T08:21:07.546Z",
+  "exportedAt": "2026-11-14T09:05:39.534Z",
   "game": {
     "date": "2026-11-14",
     "opponent": "グッドモーニングズ",
@@ -71,7 +71,7 @@
     {
       "order": 1,
       "batter": "鬼頭亮太郎",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "アウト",
       "position": 2,
@@ -81,7 +81,7 @@
     {
       "order": 1,
       "batter": "鬼頭亮太郎",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "アウト",
       "position": 5,
@@ -91,7 +91,7 @@
     {
       "order": 1,
       "batter": "鬼頭亮太郎",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "アウト",
       "position": 1,
@@ -101,7 +101,7 @@
     {
       "order": 1,
       "batter": "鬼頭亮太郎",
-      "inning": 1,
+      "inning": 5,
       "pa": 4,
       "result": "アウト",
       "position": 4,
@@ -111,7 +111,7 @@
     {
       "order": 2,
       "batter": "藤原巧翔",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "アウト",
       "position": 6,
@@ -121,7 +121,7 @@
     {
       "order": 2,
       "batter": "藤原巧翔",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "失策出塁",
       "position": 5,
@@ -131,7 +131,7 @@
     {
       "order": 2,
       "batter": "藤原巧翔",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "アウト",
       "position": 8,
@@ -141,7 +141,7 @@
     {
       "order": 2,
       "batter": "藤原巧翔",
-      "inning": 1,
+      "inning": 5,
       "pa": 4,
       "result": "四球",
       "position": null,
@@ -151,7 +151,7 @@
     {
       "order": 3,
       "batter": "中村駿",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "アウト",
       "position": 4,
@@ -161,7 +161,7 @@
     {
       "order": 3,
       "batter": "中村駿",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "単打",
       "position": 8,
@@ -171,7 +171,7 @@
     {
       "order": 3,
       "batter": "中村駿",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "三振",
       "position": null,
@@ -181,7 +181,7 @@
     {
       "order": 3,
       "batter": "中村駿",
-      "inning": 1,
+      "inning": 5,
       "pa": 4,
       "result": "犠飛",
       "position": null,
@@ -191,7 +191,7 @@
     {
       "order": 4,
       "batter": "新宮直希",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "単打",
       "position": 7,
@@ -201,7 +201,7 @@
     {
       "order": 4,
       "batter": "新宮直希",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "単打",
       "position": 7,
@@ -211,7 +211,7 @@
     {
       "order": 4,
       "batter": "新宮直希",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "単打",
       "position": 7,
@@ -221,7 +221,7 @@
     {
       "order": 4,
       "batter": "新宮直希",
-      "inning": 1,
+      "inning": 5,
       "pa": 4,
       "result": "アウト",
       "position": 4,
@@ -231,7 +231,7 @@
     {
       "order": 5,
       "batter": "谷本大知",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "失策出塁",
       "position": 6,
@@ -241,7 +241,7 @@
     {
       "order": 5,
       "batter": "谷本大知",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "四球",
       "position": null,
@@ -251,7 +251,7 @@
     {
       "order": 5,
       "batter": "谷本大知",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "四球",
       "position": null,
@@ -261,7 +261,7 @@
     {
       "order": 6,
       "batter": "大西健斗",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "四球",
       "position": null,
@@ -271,7 +271,7 @@
     {
       "order": 6,
       "batter": "大西健斗",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "アウト",
       "position": 9,
@@ -281,7 +281,7 @@
     {
       "order": 6,
       "batter": "大西健斗",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "内野安打",
       "position": 6,
@@ -291,7 +291,7 @@
     {
       "order": 7,
       "batter": "中川裕翔",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "単打",
       "position": 7,
@@ -301,7 +301,7 @@
     {
       "order": 7,
       "batter": "中川裕翔",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "単打",
       "position": 7,
@@ -311,7 +311,7 @@
     {
       "order": 7,
       "batter": "中川裕翔",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "犠飛",
       "position": null,
@@ -321,7 +321,7 @@
     {
       "order": 8,
       "batter": "新垣雄大",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "アウト",
       "position": 5,
@@ -331,7 +331,7 @@
     {
       "order": 8,
       "batter": "新垣雄大",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "四球",
       "position": null,
@@ -339,9 +339,19 @@
       "notation": "四球"
     },
     {
+      "order": 8,
+      "batter": "新垣雄大",
+      "inning": 5,
+      "pa": 3,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
       "order": 9,
       "batter": "榊原健斗",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "アウト",
       "position": 9,
@@ -351,7 +361,7 @@
     {
       "order": 9,
       "batter": "榊原健斗",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "アウト",
       "position": 9,
@@ -361,7 +371,7 @@
     {
       "order": 9,
       "batter": "榊原健斗",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "アウト",
       "position": 4,
@@ -371,7 +381,7 @@
     {
       "order": 10,
       "batter": "寺崎陸",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "アウト",
       "position": 8,
@@ -381,7 +391,7 @@
     {
       "order": 10,
       "batter": "寺崎陸",
-      "inning": 1,
+      "inning": 5,
       "pa": 2,
       "result": "二塁打",
       "position": 8,
@@ -391,7 +401,7 @@
     {
       "order": 10,
       "batter": "寺崎陸",
-      "inning": 1,
+      "inning": 5,
       "pa": 3,
       "result": "死球",
       "position": null,
@@ -401,7 +411,7 @@
     {
       "order": 11,
       "batter": "木下翔太",
-      "inning": 1,
+      "inning": 5,
       "pa": 1,
       "result": "三振",
       "position": null,
@@ -411,11 +421,11 @@
   ],
   "defense": [],
   "playerTally": {
-    "遠部巧大": {
-      "rbi": 2,
-      "run": 3,
+    "鬼頭亮太郎": {
+      "rbi": 0,
+      "run": 0,
       "error": 0,
-      "sb": 2,
+      "sb": 0,
       "cs": 0
     },
     "藤原巧翔": {
@@ -439,23 +449,9 @@
       "sb": 0,
       "cs": 0
     },
-    "大川滉平": {
-      "rbi": 0,
-      "run": 0,
-      "error": 0,
-      "sb": 0,
-      "cs": 0
-    },
     "谷本大知": {
       "rbi": 0,
       "run": 1,
-      "error": 1,
-      "sb": 0,
-      "cs": 0
-    },
-    "中川裕翔": {
-      "rbi": 5,
-      "run": 0,
       "error": 0,
       "sb": 0,
       "cs": 0
@@ -467,21 +463,21 @@
       "sb": 0,
       "cs": 0
     },
-    "榊原健斗": {
-      "rbi": 0,
-      "run": 0,
-      "error": 0,
-      "sb": 0,
-      "cs": 0
-    },
-    "鬼頭亮太郎": {
-      "rbi": 0,
+    "中川裕翔": {
+      "rbi": 5,
       "run": 0,
       "error": 0,
       "sb": 0,
       "cs": 0
     },
     "新垣雄大": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "榊原健斗": {
       "rbi": 0,
       "run": 0,
       "error": 0,
@@ -541,15 +537,8 @@
       null
     ]
   },
-  "substitutions": [
-    {
-      "type": "bat",
-      "order": 8,
-      "detail": "新垣雄大 → 木下翔太(代打/代走)",
-      "from": "5 回表"
-    }
-  ],
+  "substitutions": [],
   "finalState": {
-    "inning": 1
+    "inning": 5
   }
 }
