@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-14T09:24:21.029Z",
+  "exportedAt": "2026-11-14T11:51:04.373Z",
   "game": {
     "date": "2026-11-14",
     "opponent": "グッドモーニングズ",
@@ -193,10 +193,10 @@
       "batter": "新宮直希",
       "inning": 5,
       "pa": 1,
-      "result": "単打",
+      "result": "二塁打",
       "position": 7,
       "ballType": "ゴロ",
-      "notation": "7安ゴ"
+      "notation": "7二ゴ"
     },
     {
       "order": 4,
