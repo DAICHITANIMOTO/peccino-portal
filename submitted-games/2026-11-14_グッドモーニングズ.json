@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-14T09:11:57.689Z",
+  "exportedAt": "2026-11-14T09:17:55.561Z",
   "game": {
     "date": "2026-11-14",
     "opponent": "グッドモーニングズ",
@@ -337,16 +337,6 @@
       "position": null,
       "ballType": null,
       "notation": "四球"
-    },
-    {
-      "order": 8,
-      "batter": "新垣雄大",
-      "inning": 5,
-      "pa": 3,
-      "result": "三振",
-      "position": null,
-      "ballType": null,
-      "notation": "三振"
     },
     {
       "order": 9,
