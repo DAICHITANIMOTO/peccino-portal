@@ -1,11 +1,11 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-14T08:02:31.210Z",
+  "exportedAt": "2026-11-19T03:13:41.822Z",
   "game": {
     "date": "2026-11-07",
     "opponent": "ファンキージャンクファイブ(FJ5)",
-    "place": "G7スタジアム",
+    "place": "G7スタジアム神戸",
     "firstAttack": true,
     "recordedBy": "将軍",
     "category": "公式戦"
