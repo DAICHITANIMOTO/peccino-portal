@@ -1,11 +1,11 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-10-25T13:52:41.000Z",
+  "exportedAt": "2026-11-19T03:14:17.930Z",
   "game": {
     "date": "2026-10-18",
     "opponent": "ロボコンズ",
-    "place": "ほっともっと",
+    "place": "ほっともっとフィールド神戸",
     "firstAttack": false,
     "recordedBy": "将軍",
     "category": "練習試合"
