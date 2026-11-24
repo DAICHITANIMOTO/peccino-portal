@@ -1,0 +1,535 @@
+{
+  "app": "peccino-score-input",
+  "version": 1,
+  "exportedAt": "2026-11-24T08:35:41.986Z",
+  "game": {
+    "date": "2026-11-23",
+    "opponent": "神戸フリーマンズ",
+    "place": "天王ダムスポーツガーデン野球場",
+    "firstAttack": false,
+    "recordedBy": "将軍",
+    "category": "公式戦"
+  },
+  "lineup": [
+    {
+      "order": 1,
+      "name": "遠部巧大",
+      "position": "遊撃"
+    },
+    {
+      "order": 2,
+      "name": "藤原巧翔",
+      "position": "中堅"
+    },
+    {
+      "order": 3,
+      "name": "中村駿",
+      "position": "一塁"
+    },
+    {
+      "order": 4,
+      "name": "新宮直希",
+      "position": "指名打者"
+    },
+    {
+      "order": 5,
+      "name": "中川裕翔",
+      "position": "捕手"
+    },
+    {
+      "order": 6,
+      "name": "谷本大知",
+      "position": "投手"
+    },
+    {
+      "order": 7,
+      "name": "末光弘明",
+      "position": "二塁"
+    },
+    {
+      "order": 8,
+      "name": "大西健斗",
+      "position": "三塁"
+    },
+    {
+      "order": 9,
+      "name": "大川滉平",
+      "position": "左翼"
+    },
+    {
+      "order": 10,
+      "name": "寺崎陸",
+      "position": "右翼"
+    }
+  ],
+  "atBats": [
+    {
+      "order": 1,
+      "batter": "遠部巧大",
+      "inning": 1,
+      "pa": 1,
+      "result": "内野安打",
+      "position": 5,
+      "ballType": "ゴロ",
+      "notation": "5内安ゴ"
+    },
+    {
+      "order": 1,
+      "batter": "遠部巧大",
+      "inning": 1,
+      "pa": 2,
+      "result": "アウト",
+      "position": 3,
+      "ballType": "フライ",
+      "notation": "3飛"
+    },
+    {
+      "order": 1,
+      "batter": "遠部巧大",
+      "inning": 1,
+      "pa": 3,
+      "result": "アウト",
+      "position": 8,
+      "ballType": "ライナー",
+      "notation": "8直"
+    },
+    {
+      "order": 1,
+      "batter": "遠部巧大",
+      "inning": 1,
+      "pa": 4,
+      "result": "アウト",
+      "position": 6,
+      "ballType": "フライ",
+      "notation": "6飛"
+    },
+    {
+      "order": 2,
+      "batter": "藤原巧翔",
+      "inning": 1,
+      "pa": 1,
+      "result": "アウト",
+      "position": 6,
+      "ballType": "ライナー",
+      "notation": "6直"
+    },
+    {
+      "order": 2,
+      "batter": "藤原巧翔",
+      "inning": 1,
+      "pa": 2,
+      "result": "二塁打",
+      "position": 8,
+      "ballType": "フライ",
+      "notation": "8二飛"
+    },
+    {
+      "order": 2,
+      "batter": "藤原巧翔",
+      "inning": 1,
+      "pa": 3,
+      "result": "アウト",
+      "position": 6,
+      "ballType": "ゴロ",
+      "notation": "6ゴ"
+    },
+    {
+      "order": 3,
+      "batter": "中村駿",
+      "inning": 1,
+      "pa": 1,
+      "result": "二塁打",
+      "position": 9,
+      "ballType": "フライ",
+      "notation": "9二飛"
+    },
+    {
+      "order": 3,
+      "batter": "中村駿",
+      "inning": 1,
+      "pa": 2,
+      "result": "四球",
+      "position": null,
+      "ballType": null,
+      "notation": "四球"
+    },
+    {
+      "order": 3,
+      "batter": "中村駿",
+      "inning": 1,
+      "pa": 3,
+      "result": "単打",
+      "position": 8,
+      "ballType": "フライ",
+      "notation": "8安飛"
+    },
+    {
+      "order": 4,
+      "batter": "新宮直希",
+      "inning": 1,
+      "pa": 1,
+      "result": "単打",
+      "position": 9,
+      "ballType": "フライ",
+      "notation": "9安飛"
+    },
+    {
+      "order": 4,
+      "batter": "新宮直希",
+      "inning": 1,
+      "pa": 2,
+      "result": "併殺打",
+      "position": 4,
+      "ballType": "ゴロ",
+      "notation": "4併ゴ"
+    },
+    {
+      "order": 4,
+      "batter": "新宮直希",
+      "inning": 1,
+      "pa": 3,
+      "result": "アウト",
+      "position": 5,
+      "ballType": "ゴロ",
+      "notation": "5ゴ"
+    },
+    {
+      "order": 5,
+      "batter": "中川裕翔",
+      "inning": 1,
+      "pa": 1,
+      "result": "四球",
+      "position": null,
+      "ballType": null,
+      "notation": "四球"
+    },
+    {
+      "order": 5,
+      "batter": "中川裕翔",
+      "inning": 1,
+      "pa": 2,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 5,
+      "batter": "中川裕翔",
+      "inning": 1,
+      "pa": 3,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 6,
+      "batter": "谷本大知",
+      "inning": 1,
+      "pa": 1,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 6,
+      "batter": "谷本大知",
+      "inning": 1,
+      "pa": 2,
+      "result": "アウト",
+      "position": 4,
+      "ballType": "フライ",
+      "notation": "4飛"
+    },
+    {
+      "order": 6,
+      "batter": "谷本大知",
+      "inning": 1,
+      "pa": 3,
+      "result": "アウト",
+      "position": 5,
+      "ballType": "ゴロ",
+      "notation": "5ゴ"
+    },
+    {
+      "order": 7,
+      "batter": "鬼頭亮太郎",
+      "inning": 1,
+      "pa": 1,
+      "result": "アウト",
+      "position": 6,
+      "ballType": "ゴロ",
+      "notation": "6ゴ"
+    },
+    {
+      "order": 7,
+      "batter": "鬼頭亮太郎",
+      "inning": 1,
+      "pa": 2,
+      "result": "失策出塁",
+      "position": 5,
+      "ballType": "ゴロ",
+      "notation": "5失ゴ"
+    },
+    {
+      "order": 7,
+      "batter": "末光弘明",
+      "inning": 1,
+      "pa": 3,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 8,
+      "batter": "大西健斗",
+      "inning": 1,
+      "pa": 1,
+      "result": "二塁打",
+      "position": 8,
+      "ballType": "ライナー",
+      "notation": "8二直"
+    },
+    {
+      "order": 8,
+      "batter": "大西健斗",
+      "inning": 1,
+      "pa": 2,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 8,
+      "batter": "大西健斗",
+      "inning": 1,
+      "pa": 3,
+      "result": "失策出塁",
+      "position": 6,
+      "ballType": "ゴロ",
+      "notation": "6失ゴ"
+    },
+    {
+      "order": 9,
+      "batter": "大川滉平",
+      "inning": 1,
+      "pa": 1,
+      "result": "アウト",
+      "position": 1,
+      "ballType": "ゴロ",
+      "notation": "1ゴ"
+    },
+    {
+      "order": 9,
+      "batter": "大川滉平",
+      "inning": 1,
+      "pa": 2,
+      "result": "失策出塁",
+      "position": 6,
+      "ballType": "ゴロ",
+      "notation": "6失ゴ"
+    },
+    {
+      "order": 9,
+      "batter": "大川滉平",
+      "inning": 1,
+      "pa": 3,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 10,
+      "batter": "半井大稀",
+      "inning": 1,
+      "pa": 1,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 10,
+      "batter": "寺崎陸",
+      "inning": 1,
+      "pa": 2,
+      "result": "三振",
+      "position": null,
+      "ballType": null,
+      "notation": "三振"
+    },
+    {
+      "order": 10,
+      "batter": "寺崎陸",
+      "inning": 1,
+      "pa": 3,
+      "result": "アウト",
+      "position": 8,
+      "ballType": "フライ",
+      "notation": "8飛"
+    }
+  ],
+  "defense": [],
+  "playerTally": {
+    "遠部巧大": {
+      "rbi": 0,
+      "run": 1,
+      "error": 0,
+      "sb": 1,
+      "cs": 0
+    },
+    "藤原巧翔": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "中村駿": {
+      "rbi": 1,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "新宮直希": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "中川裕翔": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "谷本大知": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "鬼頭亮太郎": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "大西健斗": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 1,
+      "cs": 0
+    },
+    "大川滉平": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "半井大稀": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "末光弘明": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    },
+    "寺崎陸": {
+      "rbi": 0,
+      "run": 0,
+      "error": 0,
+      "sb": 0,
+      "cs": 0
+    }
+  },
+  "pitchers": [
+    {
+      "order": 1,
+      "name": "谷本大知",
+      "outs": 15,
+      "r": 1,
+      "er": 0,
+      "h": 3,
+      "hr": 0,
+      "so": 1,
+      "bb": 3,
+      "hbp": 0,
+      "wp": 0,
+      "note": "",
+      "decision": "",
+      "pitches": 0
+    },
+    {
+      "order": 2,
+      "name": "中村駿",
+      "outs": 6,
+      "r": 2,
+      "er": 2,
+      "h": 3,
+      "hr": 1,
+      "so": 4,
+      "bb": 0,
+      "hbp": 0,
+      "wp": 0,
+      "note": "",
+      "decision": "負",
+      "pitches": 0
+    }
+  ],
+  "linescore": {
+    "self": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "opp": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1
+    ]
+  },
+  "substitutions": [
+    {
+      "type": "bat",
+      "order": 10,
+      "detail": "半井大稀 → 寺崎陸(代打/代走)",
+      "from": "4回裏"
+    },
+    {
+      "type": "bat",
+      "order": 7,
+      "detail": "鬼頭亮太郎 → 末光弘明(代打/代走)",
+      "from": "6回裏"
+    }
+  ],
+  "finalState": {
+    "inning": 1
+  }
+}
