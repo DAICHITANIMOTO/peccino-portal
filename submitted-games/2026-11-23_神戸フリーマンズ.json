@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-24T08:35:41.986Z",
+  "exportedAt": "2026-11-25T15:13:47.598Z",
   "game": {
     "date": "2026-11-23",
     "opponent": "神戸フリーマンズ",
@@ -476,7 +476,7 @@
       "wp": 0,
       "note": "",
       "decision": "",
-      "pitches": 0
+      "pitches": 81
     },
     {
       "order": 2,
@@ -492,7 +492,7 @@
       "wp": 0,
       "note": "",
       "decision": "負",
-      "pitches": 0
+      "pitches": 39
     }
   ],
   "linescore": {
