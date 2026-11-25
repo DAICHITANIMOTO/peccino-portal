@@ -1,7 +1,7 @@
 {
   "app": "peccino-score-input",
   "version": 1,
-  "exportedAt": "2026-11-24T08:43:03.261Z",
+  "exportedAt": "2026-11-25T15:14:20.867Z",
   "game": {
     "date": "2026-11-23",
     "opponent": "疾風",
@@ -488,7 +488,7 @@
       "wp": 0,
       "note": "",
       "decision": "勝",
-      "pitches": 0
+      "pitches": 63
     },
     {
       "order": 2,
@@ -504,7 +504,7 @@
       "wp": 0,
       "note": "",
       "decision": "H",
-      "pitches": 0
+      "pitches": 20
     },
     {
       "order": 3,
@@ -520,7 +520,7 @@
       "wp": 0,
       "note": "",
       "decision": "H",
-      "pitches": 0
+      "pitches": 27
     },
     {
       "order": 4,
@@ -536,7 +536,7 @@
       "wp": 0,
       "note": "",
       "decision": "S",
-      "pitches": 0
+      "pitches": 20
     }
   ],
   "linescore": {
